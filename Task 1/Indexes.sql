@@ -1,5 +1,5 @@
 -- When a user searches "jobs in Karachi", this index jumps directly to Karachi jobs
--- without scanning every single row in the Jobs table
+-- without scanning every single row in the jobs table
 create index idx_jobs_location on jobs(location);
 
 -- When a user filters "show me only full-time jobs", this index finds them instantly
@@ -10,9 +10,10 @@ create index idx_jobs_employment_type on jobs(employment_type);
 -- every job including closed and draft ones just to filter them out
 create index idx_jobs_status on jobs(status);
 
--- When a user filters "salary between 50,000 and 100,000", this composite index
--- covers both columns together so the database does not scan the entire jobs table
-create index idx_jobs_salary on jobs(salary_min, salary_max);
+-- Separate indexes for salary min and max perform better for range queries
+-- than a single composite index
+create index idx_jobs_salary_min on jobs(salary_min);
+create index idx_jobs_salary_max on jobs(salary_max);
 
 -- Every login attempt searches by email. If Ali logs in with ali@gmail.com,
 -- this index finds his account instantly instead of scanning all users
@@ -37,3 +38,14 @@ create index idx_job_skills_skill_id on job_skills(skill_id);
 -- When a recruiter searches "all users who know React", this index finds them
 -- directly from user_skills without reading every user's skill one by one
 create index idx_user_skills_skill_id on user_skills(skill_id);
+
+-- When a recruiter filters applications by status such as shortlisted or reviewed,
+-- this index finds them instantly without scanning all applications
+create index idx_applications_status on applications(status);
+
+-- Shows newest jobs first in search results without sorting the entire table
+create index idx_jobs_created_at on jobs(created_at desc);
+
+-- Most common filter combo on the platform, status and location together
+-- such as "open jobs in Karachi", composite index serves both filters at once
+create index idx_jobs_status_location on jobs(status, location);
