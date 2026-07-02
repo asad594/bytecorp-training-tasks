@@ -49,3 +49,10 @@ create index idx_jobs_created_at on jobs(created_at desc);
 -- Most common filter combo on the platform, status and location together
 -- such as "open jobs in Karachi", composite index serves both filters at once
 create index idx_jobs_status_location on jobs(status, location);
+
+-- When viewing "all reps for this company", this index finds them directly
+-- without scanning every row in company_members
+create index idx_company_members_company_id on company_members(company_id);
+-- When filtering users by role, such as listing all company representatives,
+-- this index finds them directly without scanning the entire users table
+create index idx_users_role on users(role);
