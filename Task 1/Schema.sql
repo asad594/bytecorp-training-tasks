@@ -1,6 +1,7 @@
 create type employment_type_enum as enum('full-time','part-time','contract');
 create type job_status_enum as enum('open','closed','draft');
 create type application_status_enum as enum('pending','reviewed','shortlisted','rejected');
+create type user_role_enum as enum('job_seeker','company_rep');
 
 -- users table
 create table users(
@@ -8,6 +9,7 @@ create table users(
     name varchar(100) not null,
     email varchar(100) not null unique,
     password_hash varchar(255) not null,
+    role user_role_enum not null default 'job_seeker',
     bio text,
     years_of_experience int not null default 0 check(years_of_experience >= 0),
     created_at timestamp not null default now(),
@@ -34,6 +36,16 @@ create table companies(
     deleted_by int,
     foreign key (updated_by) references users(user_id) on delete set null,
     foreign key (deleted_by) references users(user_id) on delete set null
+);
+
+-- company_members junction table (links company_rep users to the companies they represent)
+create table company_members(
+    user_id int not null,
+    company_id int not null,
+    created_at timestamp not null default now(),
+    primary key(user_id, company_id),
+    foreign key (user_id) references users(user_id) on delete cascade,
+    foreign key (company_id) references companies(company_id) on delete cascade
 );
 
 -- jobs table
