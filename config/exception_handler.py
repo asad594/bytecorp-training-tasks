@@ -1,7 +1,9 @@
-import logging
+﻿import logging
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status as http_status
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError, DatabaseError
 
 logger = logging.getLogger('django')
 
@@ -25,9 +27,53 @@ def custom_exception_handler(exc, context):
         }
         return response
 
+    view_name = context.get('view').__class__.__name__ if context.get('view') else 'UnknownView'
+
+    if isinstance(exc, ObjectDoesNotExist):
+        logger.warning("Unhandled ObjectDoesNotExist in %s: %s", view_name, str(exc))
+        return Response(
+            {
+                'success': False,
+                'error': {
+                    'code': 'NOT_FOUND',
+                    'message': 'The requested resource was not found.',
+                    'details': None,
+                }
+            },
+            status=http_status.HTTP_404_NOT_FOUND
+        )
+
+    if isinstance(exc, IntegrityError):
+        logger.error("IntegrityError in %s: %s", view_name, str(exc), exc_info=True)
+        return Response(
+            {
+                'success': False,
+                'error': {
+                    'code': 'DATABASE_ERROR',
+                    'message': 'A database constraint was violated. Please check your input.',
+                    'details': None,
+                }
+            },
+            status=http_status.HTTP_400_BAD_REQUEST
+        )
+
+    if isinstance(exc, DatabaseError):
+        logger.critical("DatabaseError in %s: %s", view_name, str(exc), exc_info=True)
+        return Response(
+            {
+                'success': False,
+                'error': {
+                    'code': 'DATABASE_ERROR',
+                    'message': 'A database error occurred. Please try again later.',
+                    'details': None,
+                }
+            },
+            status=http_status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
     logger.error(
         "Unhandled exception in %s: %s",
-        context.get('view').__class__.__name__ if context.get('view') else 'UnknownView',
+        view_name,
         str(exc),
         exc_info=True
     )
@@ -46,21 +92,17 @@ def custom_exception_handler(exc, context):
 
 
 def _extract_message_and_details(raw):
-    # Case 1: dict with a single 'detail' key (NotFound, PermissionDenied, AuthenticationFailed, etc.)
     if isinstance(raw, dict) and 'detail' in raw and len(raw) == 1:
         return str(raw['detail']), None
 
-    # Case 2: plain list — raised via ValidationError('some string') or ['a', 'b']
     if isinstance(raw, list):
         if len(raw) == 1:
             return str(raw[0]), None
         return '; '.join(str(item) for item in raw), None
 
-    # Case 3: dict of field-level errors, e.g. {"title": ["too short"]}
     if isinstance(raw, dict):
         return 'One or more fields failed validation.', raw
 
-    # Fallback — anything else
     return str(raw), None
 
 
