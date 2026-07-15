@@ -1,7 +1,7 @@
-from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import NotFound, PermissionDenied
 from companies.models import Company, CompanyMember
 from companies.serializers import CompanySerializer
 
@@ -10,22 +10,19 @@ class CompanyListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        companies = Company.objects.all()
+        companies = Company.objects.filter(deleted_at__isnull=True)
         serializer = CompanySerializer(companies, many=True)
         return Response(serializer.data)
 
     def post(self, request):
         if request.user.role != 'company_rep':
-            return Response(
-                {'error': 'Only company representatives can create companies.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise PermissionDenied('Only company representatives can create companies.')
+
         serializer = CompanySerializer(data=request.data)
-        if serializer.is_valid():
-            company = serializer.save(updated_by=request.user)
-            CompanyMember.objects.create(user=request.user, company=company)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        company = serializer.save(updated_by=request.user)
+        CompanyMember.objects.create(user=request.user, company=company)
+        return Response(serializer.data, status=201)
 
 
 class CompanyDetailView(APIView):
@@ -33,62 +30,39 @@ class CompanyDetailView(APIView):
 
     def get_object(self, pk):
         try:
-            return Company.objects.get(pk=pk)
+            return Company.objects.get(pk=pk, deleted_at__isnull=True)
         except Company.DoesNotExist:
-            return None
+            raise NotFound('Company not found.')
 
     def is_member(self, user, company):
         return CompanyMember.objects.filter(user=user, company=company).exists()
 
     def get(self, request, pk):
         company = self.get_object(pk)
-        if not company:
-            return Response(
-                {'error': 'Company not found.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
         serializer = CompanySerializer(company)
         return Response(serializer.data)
 
     def put(self, request, pk):
         company = self.get_object(pk)
-        if not company:
-            return Response(
-                {'error': 'Company not found.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
         if request.user.role != 'company_rep':
-            return Response(
-                {'error': 'Only company representatives can update companies.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise PermissionDenied('Only company representatives can update companies.')
         if not self.is_member(request.user, company):
-            return Response(
-                {'error': 'You are not a member of this company.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise PermissionDenied('You are not a member of this company.')
+
         serializer = CompanySerializer(company, data=request.data)
-        if serializer.is_valid():
-            serializer.save(updated_by=request.user)
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(updated_by=request.user)
+        return Response(serializer.data)
 
     def delete(self, request, pk):
         company = self.get_object(pk)
-        if not company:
-            return Response(
-                {'error': 'Company not found.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
         if request.user.role != 'company_rep':
-            return Response(
-                {'error': 'Only company representatives can delete companies.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise PermissionDenied('Only company representatives can delete companies.')
         if not self.is_member(request.user, company):
-            return Response(
-                {'error': 'You are not a member of this company.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        company.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            raise PermissionDenied('You are not a member of this company.')
+
+        import datetime
+        company.deleted_at = datetime.datetime.now()
+        company.deleted_by = request.user
+        company.save()
+        return Response(status=204)
