@@ -2,6 +2,7 @@
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, PermissionDenied
+import datetime
 from skills.models import Skill
 from skills.serializers import SkillSerializer
 
@@ -54,8 +55,6 @@ class SkillDetailView(APIView):
             raise PermissionDenied('Only admin can delete skills.')
 
         skill = self.get_object(pk)
-
-        import datetime
         skill.deleted_at = datetime.datetime.now()
         skill.deleted_by = request.user
         skill.save()

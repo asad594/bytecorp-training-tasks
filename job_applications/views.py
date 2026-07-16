@@ -1,7 +1,8 @@
-from rest_framework.response import Response
+﻿from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+import datetime
 from job_applications.models import JobApplication
 from job_applications.serializers import JobApplicationSerializer
 from jobs.models import Job
@@ -77,8 +78,6 @@ class JobApplicationDetailView(APIView):
 
     def delete(self, request, pk):
         application = self.get_object(pk)
-
-        import datetime
         application.deleted_at = datetime.datetime.now()
         application.deleted_by = request.user
         application.save()
