@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 from django.db import models
 
 
@@ -23,8 +23,10 @@ class RequestLog(models.Model):
 
     level = models.CharField(max_length=10, choices=LEVEL_CHOICES, default="INFO")
 
-    # sanitized only — never raw body with secrets
+    # sanitized only - never raw body with secrets
     request_body = models.JSONField(null=True, blank=True)
+    response_body = models.JSONField(null=True, blank=True)
+    response_headers = models.JSONField(null=True, blank=True)
 
     error_type = models.CharField(max_length=255, null=True, blank=True)
     error_message = models.TextField(null=True, blank=True)

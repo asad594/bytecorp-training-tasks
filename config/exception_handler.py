@@ -129,13 +129,14 @@ def custom_exception_handler(exc, context):
 
 
 def _extract_message_and_details(raw):
-    if isinstance(raw, dict) and 'detail' in raw and len(raw) == 1:
-        return str(raw['detail']), None
     if isinstance(raw, list):
         if len(raw) == 1:
             return str(raw[0]), None
         return '; '.join(str(item) for item in raw), None
     if isinstance(raw, dict):
+        if 'detail' in raw:
+            extra = {k: v for k, v in raw.items() if k != 'detail'}
+            return str(raw['detail']), (extra or None)
         return 'One or more fields failed validation.', raw
     return str(raw), None
 

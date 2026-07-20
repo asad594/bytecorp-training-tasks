@@ -1,7 +1,8 @@
-import time
+﻿import time
 import uuid
 import logging
 import traceback
+import json
 
 from .context import correlation_id_var, get_error_info
 from .sanitizer import sanitize_data
@@ -26,16 +27,17 @@ class RequestLoggingMiddleware:
         stack_trace = None
         level = "INFO"
 
-        # Read + sanitize the body BEFORE the view (DRF) consumes the stream
         body = None
         if request.method in ("POST", "PUT", "PATCH"):
             try:
-                import json
-                raw_body = request.body  # caches it, safe to read again later (DRF, etc.)
+                raw_body = request.body
                 if raw_body:
                     body = sanitize_data(json.loads(raw_body))
             except Exception:
                 body = None
+
+        response_body = None
+        response_headers = None
 
         try:
             response = self.get_response(request)
@@ -47,6 +49,30 @@ class RequestLoggingMiddleware:
                 level = "WARNING"
 
             response["X-Correlation-ID"] = str(correlation_id)
+
+            # IMPORTANT: DRF/TemplateResponse objects defer rendering.
+            # We must force render() before we can safely read .content
+            try:
+                if hasattr(response, "render") and callable(response.render):
+                    if not getattr(response, "is_rendered", True):
+                        response.render()
+            except Exception:
+                pass
+
+            try:
+                content_type = response.get("Content-Type", "")
+                if "application/json" in content_type and hasattr(response, "content"):
+                    raw_response = response.content
+                    if raw_response:
+                        response_body = sanitize_data(json.loads(raw_response))
+            except Exception:
+                response_body = None
+
+            try:
+                response_headers = sanitize_data(dict(response.items()))
+            except Exception:
+                response_headers = None
+
             return response
         except Exception as exc:
             level = "ERROR"
@@ -96,6 +122,8 @@ class RequestLoggingMiddleware:
                     ip_address=ip,
                     level=level,
                     request_body=body,
+                    response_body=response_body,
+                    response_headers=response_headers,
                     error_type=error_type,
                     error_message=error_message,
                     stack_trace=stack_trace,
