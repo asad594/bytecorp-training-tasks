@@ -1,7 +1,8 @@
-from rest_framework.response import Response
+﻿from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+import datetime
 from jobs.models import Job
 from jobs.serializers import JobSerializer
 from companies.models import Company, CompanyMember
@@ -85,7 +86,6 @@ class JobDetailView(APIView):
         if not self.is_member(request.user, job.company):
             raise PermissionDenied('You can only delete jobs for your own company.')
 
-        import datetime
         job.deleted_at = datetime.datetime.now()
         job.deleted_by = request.user
         job.save()

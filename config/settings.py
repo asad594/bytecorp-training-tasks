@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+import logging
 from pathlib import Path
 from datetime import timedelta
 
@@ -51,10 +52,12 @@ INSTALLED_APPS = [
     'jobs',
     'job_applications',
     'skills',
+    'observability',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'observability.middleware.RequestLoggingMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -94,8 +97,18 @@ DATABASES = {
         'PASSWORD': os.environ.get('DB_PASSWORD'),
         'HOST': os.environ.get('DB_HOST'),
         'PORT': os.environ.get('DB_PORT'),
-    }
+    },
+    'logs_db': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('LOGS_DB_NAME'),
+        'USER': os.environ.get('LOGS_DB_USER'),
+        'PASSWORD': os.environ.get('LOGS_DB_PASSWORD'),
+        'HOST': os.environ.get('LOGS_DB_HOST'),
+        'PORT': os.environ.get('LOGS_DB_PORT'),
+    },
 }
+
+DATABASE_ROUTERS = ['observability.routers.LoggingRouter']
 
 
 # Password validation
@@ -156,21 +169,68 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'config.exception_handler.custom_exception_handler',
 }
 
-# Logging — taake unexpected (500) errors server console/logs mein dikhein,
-# client ko sirf generic safe message jaye
+
+# ---------------------------------------------------------------------------
+# Logging & Observability
+# ---------------------------------------------------------------------------
+
+class CorrelationIdFilter(logging.Filter):
+    """Injects the current request's correlation_id into every log record."""
+
+    def filter(self, record):
+        from observability.context import get_correlation_id
+        record.correlation_id = get_correlation_id() or "N/A"
+        return True
+
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'correlation_id': {
+            '()': 'config.settings.CorrelationIdFilter',
+        },
+    },
+    'formatters': {
+        'json': {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+            'format': '%(asctime)s %(levelname)s %(correlation_id)s %(name)s %(message)s',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'json',
+            'filters': ['correlation_id'],
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'app.log',
+            'maxBytes': 1024 * 1024 * 5,
+            'backupCount': 5,
+            'formatter': 'json',
+            'filters': ['correlation_id'],
         },
     },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
+    },
     'loggers': {
+        'observability': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console', 'file'],
             'level': 'ERROR',
-            'propagate': True,
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'ERROR',
+            'propagate': False,
         },
     },
 }
