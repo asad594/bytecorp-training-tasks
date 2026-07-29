@@ -12,6 +12,13 @@ class CompanySerializer(serializers.ModelSerializer):
             'max_length': 'Company name cannot exceed 120 characters.'
         }
     )
+    registration_number = serializers.CharField(
+        max_length=50,
+        error_messages={
+            'blank': 'Company registration number is required.',
+            'max_length': 'Registration number cannot exceed 50 characters.'
+        }
+    )
     description = serializers.CharField(
         min_length=20,
         required=False,
@@ -43,6 +50,7 @@ class CompanySerializer(serializers.ModelSerializer):
         fields = [
             'company_id',
             'name',
+            'registration_number',
             'description',
             'website',
             'location',

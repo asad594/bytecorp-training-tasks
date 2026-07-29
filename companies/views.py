@@ -2,7 +2,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from companies.models import Company, CompanyMember
 from companies.serializers import CompanySerializer
 
@@ -20,11 +20,56 @@ class CompanyListCreateView(APIView):
         if request.user.role != 'company_rep':
             raise PermissionDenied('Only company representatives can create companies.')
 
+        existing_membership = CompanyMember.objects.filter(user=request.user).first()
+        if existing_membership:
+            raise PermissionDenied('You already belong to a company.')
+
         serializer = CompanySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        company = serializer.save(updated_by=request.user)
-        CompanyMember.objects.create(user=request.user, company=company)
-        return Response(serializer.data, status=201)
+        company = serializer.save(updated_by=request.user, is_verified=False)
+        CompanyMember.objects.create(user=request.user, company=company, role='owner')
+        return Response(
+            {
+                'company': serializer.data,
+                'message': 'Company created successfully. Pending admin approval.'
+            },
+            status=201
+        )
+
+
+class CompanyJoinView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        if request.user.role != 'company_rep':
+            raise PermissionDenied('Only company representatives can join companies.')
+
+        existing_membership = CompanyMember.objects.filter(user=request.user).first()
+        if existing_membership:
+            raise PermissionDenied('You already belong to a company.')
+
+        registration_number = request.data.get('registration_number')
+        if not registration_number:
+            raise ValidationError({'registration_number': 'This field is required.'})
+
+        try:
+            company = Company.objects.get(
+                registration_number=registration_number,
+                deleted_at__isnull=True
+            )
+        except Company.DoesNotExist:
+            raise NotFound('No company found with this registration number.')
+
+        CompanyMember.objects.create(user=request.user, company=company, role='member')
+        serializer = CompanySerializer(company)
+        return Response(
+            {
+                'company': serializer.data,
+                'message': 'Successfully joined the company.'
+            },
+            status=200
+        )
 
 
 class CompanyDetailView(APIView):
@@ -35,6 +80,9 @@ class CompanyDetailView(APIView):
             return Company.objects.get(pk=pk, deleted_at__isnull=True)
         except Company.DoesNotExist:
             raise NotFound('Company not found.')
+
+    def is_owner(self, user, company):
+        return CompanyMember.objects.filter(user=user, company=company, role='owner').exists()
 
     def is_member(self, user, company):
         return CompanyMember.objects.filter(user=user, company=company).exists()
@@ -48,9 +96,8 @@ class CompanyDetailView(APIView):
         company = self.get_object(pk)
         if request.user.role != 'company_rep':
             raise PermissionDenied('Only company representatives can update companies.')
-        if not self.is_member(request.user, company):
-            raise PermissionDenied('You are not a member of this company.')
-
+        if not self.is_owner(request.user, company):
+            raise PermissionDenied('Only the company owner can update company details.')
         serializer = CompanySerializer(company, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(updated_by=request.user)
@@ -60,9 +107,8 @@ class CompanyDetailView(APIView):
         company = self.get_object(pk)
         if request.user.role != 'company_rep':
             raise PermissionDenied('Only company representatives can delete companies.')
-        if not self.is_member(request.user, company):
-            raise PermissionDenied('You are not a member of this company.')
-
+        if not self.is_owner(request.user, company):
+            raise PermissionDenied('Only the company owner can delete the company.')
         import datetime
         company.deleted_at = datetime.datetime.now()
         company.deleted_by = request.user
