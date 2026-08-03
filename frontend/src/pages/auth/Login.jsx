@@ -1,6 +1,11 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../../components/common/AuthLayout'
+import Button from '../../components/common/Button'
+import Input from '../../components/common/Input'
+// Wired custom hooks (useForm & useAuth)
+import useForm from '../../hooks/useForm'
+import useAuth from '../../hooks/useAuth'
 
 const roleConfig = {
   job_seeker: {
@@ -50,31 +55,30 @@ export default function Login() {
   const currentRole = roleConfig[role] ? role : 'job_seeker'
   const config = roleConfig[currentRole]
 
-  const [form, setForm] = useState({ email: '', password: '' })
+  // Wired useAuth custom hook for global auth state management
+  const { login: authLogin } = useAuth()
+
+  // Keep non-form UI state as local useState
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
 
-  const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    try {
-      console.log(`Logging in as ${currentRole} with payload:`, form)
+  // Wired useForm custom hook for form state, validation errors, and submit handling
+  const { form, errors, loading, handleChange, handleSubmit } = useForm(
+    { email: '', password: '' },
+    async (values, { setErrors }) => {
+      // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 600))
+
+      if (values.email.includes('error')) {
+        setErrors({ email: 'Invalid credentials. Please check your email and password.' })
+        return
+      }
+
+      // Execute login using useAuth hook
+      authLogin({ email: values.email, role: currentRole }, 'mock_jwt_token_123')
       navigate('/')
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Invalid credentials. Please try again.')
-    } finally {
-      setLoading(false)
     }
-  }
+  )
 
   return (
     <AuthLayout
@@ -84,10 +88,9 @@ export default function Login() {
       showFloatingCards={config.showFloatingCards}
       cardsVariant={config.cardsVariant}
     >
-      {/* Glass Card Container */}
-      <div className="rounded-[20px] border border-white/14 bg-white/[0.06] p-7 sm:p-9 shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-[22px] transition-all duration-300 hover:border-cyan-400/30 hover:shadow-[0_12px_45px_rgba(0,0,0,0.5)] focus-within:border-cyan-400/50 focus-within:shadow-[0_8px_40px_rgba(0,0,0,0.5),0_0_30px_rgba(34,211,238,0.15)]">
-        
-        {/* Role Selector Tabs */}
+      <div className="w-full rounded-[20px] border border-white/14 bg-white/[0.06] p-7 sm:p-9 shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-[22px] transition-all duration-300 hover:border-cyan-400/30 hover:shadow-[0_12px_45px_rgba(0,0,0,0.5)] focus-within:border-cyan-400/50 focus-within:shadow-[0_8px_40px_rgba(0,0,0,0.5),0_0_30px_rgba(34,211,238,0.15)]">
+
+        {/* Role Selector Tabs (Left as raw buttons to preserve custom active/inactive tab segment styling) */}
         <div className="mb-6 flex rounded-xl border border-white/10 bg-white/5 p-1 backdrop-blur-md">
           <button
             type="button"
@@ -109,7 +112,7 @@ export default function Login() {
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
-            Company
+            Employer
           </button>
           <button
             type="button"
@@ -130,52 +133,44 @@ export default function Login() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {error && (
+          {errors.general && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300 animate-pulse">
-              {error}
+              {errors.general}
             </div>
           )}
 
-          {/* Email Field */}
-          <div>
-            <label className="block text-[0.78rem] font-medium text-[#b7bede] mb-1.5">
-              Email Address
-            </label>
-            <input
-              type="email"
-              name="email"
-              required
-              value={form.email}
-              onChange={handleChange}
-              placeholder={config.emailPlaceholder}
-              className="w-full rounded-xl border border-white/12 bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-[#6b7394] outline-none transition-all duration-200 focus:border-[#22d3ee] focus:bg-[#22d3ee]/[0.08] focus:shadow-[0_0_15px_rgba(34,211,238,0.2)]"
-            />
-          </div>
+          {/* Email Field with field-specific error prop from useForm */}
+          <Input
+            label="Email Address"
+            type="email"
+            name="email"
+            required
+            value={form.email || ''}
+            onChange={handleChange}
+            error={errors.email}
+            placeholder={config.emailPlaceholder}
+          />
 
-          {/* Password Field */}
-          <div>
-            <label className="block text-[0.78rem] font-medium text-[#b7bede] mb-1.5">
-              Password
-            </label>
-            <div className="relative flex items-center">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                required
-                value={form.password}
-                onChange={handleChange}
-                placeholder="••••••••••••"
-                className="w-full rounded-xl border border-white/12 bg-white/[0.05] px-4 py-3 pr-11 text-sm text-white placeholder-[#6b7394] outline-none transition-all duration-200 focus:border-[#22d3ee] focus:bg-[#22d3ee]/[0.08] focus:shadow-[0_0_15px_rgba(34,211,238,0.2)]"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3 text-base text-slate-400 hover:text-white transition duration-200 hover:scale-125 opacity-80 cursor-pointer"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? '🙈' : '👁'}
-              </button>
-            </div>
+          {/* Password Field with field-specific error prop from useForm */}
+          <div className="relative">
+            <Input
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              required
+              value={form.password || ''}
+              onChange={handleChange}
+              error={errors.password}
+              placeholder="••••••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-9 text-base text-slate-400 hover:text-white transition duration-200 hover:scale-125 opacity-80 cursor-pointer"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? '🙈' : '👁'}
+            </button>
           </div>
 
           {/* Field Row: Remember me & Forgot Password */}
@@ -194,15 +189,17 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Glowing Animated Submit Button */}
-          <button
+          {/* Submit Button using useForm loading state */}
+          <Button
             type="submit"
-            disabled={loading}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl btn-gradient-shimmer py-3.5 text-sm font-semibold text-[#0b0f1e] shadow-[0_8px_20px_rgba(34,211,238,0.3)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(34,211,238,0.45)] active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed group cursor-pointer"
+            isLoading={loading}
+            variant="primary"
+            size="lg"
+            className="mt-2 w-full btn-gradient-shimmer"
           >
-            <span>{loading ? 'Signing in…' : 'Sign in'}</span>
-            <span className="transition-transform duration-200 group-hover:translate-x-1.5 font-bold">→</span>
-          </button>
+            <span>Sign in</span>
+            <span className="font-bold">→</span>
+          </Button>
         </form>
 
         {/* Social Login Separator */}

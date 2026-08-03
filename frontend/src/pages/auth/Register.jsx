@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../../components/common/AuthLayout'
+import Button from '../../components/common/Button'
+import Input from '../../components/common/Input'
+// Wired custom hooks (useForm)
+import useForm from '../../hooks/useForm'
 
 const roleConfig = {
   job_seeker: {
@@ -31,7 +35,10 @@ export default function Register() {
   const currentRole = roleConfig[role] ? role : 'job_seeker'
   const config = roleConfig[currentRole]
 
-  const [form, setForm] = useState({
+  // Keep non-form UI state as local useState
+  const [showPassword, setShowPassword] = useState(false)
+
+  const initialValues = {
     firstName: '',
     lastName: '',
     companyName: '',
@@ -39,42 +46,27 @@ export default function Register() {
     password: '',
     confirmPassword: '',
     agreeTerms: false,
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleChange = (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
-    setForm((prev) => ({ ...prev, [e.target.name]: value }))
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
+  // Wired useForm custom hook for form state, validation errors, and submit handling
+  const { form, errors, loading, handleChange, handleSubmit } = useForm(
+    initialValues,
+    async (values, { setErrors }) => {
+      if (values.password !== values.confirmPassword) {
+        setErrors({ confirmPassword: 'Passwords do not match.' })
+        return
+      }
 
-    if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match.')
-      return
-    }
+      if (!values.agreeTerms) {
+        setErrors({ general: 'You must agree to the Terms of Service to create an account.' })
+        return
+      }
 
-    if (!form.agreeTerms) {
-      setError('You must agree to the Terms of Service to create an account.')
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      console.log(`Registering ${currentRole} payload:`, form)
+      // Simulate API request delay
       await new Promise((resolve) => setTimeout(resolve, 600))
       navigate(`/login/${currentRole}`)
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create account. Try again.')
-    } finally {
-      setLoading(false)
     }
-  }
+  )
 
   return (
     <AuthLayout
@@ -86,7 +78,7 @@ export default function Register() {
     >
       <div className="rounded-[20px] border border-white/14 bg-white/[0.06] p-7 sm:p-9 shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-[22px] transition-all duration-300 focus-within:border-cyan-400/45">
         
-        {/* Role Selector Tabs */}
+        {/* Role Selector Tabs (Left as raw buttons to preserve custom active/inactive tab segment styling) */}
         <div className="mb-6 flex rounded-xl border border-white/10 bg-white/5 p-1">
           <button
             type="button"
@@ -112,112 +104,108 @@ export default function Register() {
           </button>
         </div>
 
+        {/* Card Header */}
         <h2 className="font-sora text-2xl font-bold text-white mb-1">Create Account</h2>
         <p className="text-xs text-[#99a2c2] mb-6">{config.subtitle}</p>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {error && (
+          {errors.general && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
-              {error}
+              {errors.general}
             </div>
           )}
 
+          {/* Name Row with field-specific errors from useForm */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[0.78rem] font-medium text-[#b7bede] mb-1.5">First Name</label>
-              <input
-                type="text"
-                name="firstName"
-                required
-                value={form.firstName}
-                onChange={handleChange}
-                placeholder="Alex"
-                className="w-full rounded-xl border border-white/12 bg-white/[0.05] px-3.5 py-2.5 text-sm text-white placeholder-[#6b7394] outline-none transition focus:border-[#22d3ee] focus:bg-[#22d3ee]/[0.06]"
-              />
-            </div>
-            <div>
-              <label className="block text-[0.78rem] font-medium text-[#b7bede] mb-1.5">Last Name</label>
-              <input
-                type="text"
-                name="lastName"
-                required
-                value={form.lastName}
-                onChange={handleChange}
-                placeholder="Morgan"
-                className="w-full rounded-xl border border-white/12 bg-white/[0.05] px-3.5 py-2.5 text-sm text-white placeholder-[#6b7394] outline-none transition focus:border-[#22d3ee] focus:bg-[#22d3ee]/[0.06]"
-              />
-            </div>
+            <Input
+              label="First Name"
+              type="text"
+              name="firstName"
+              required
+              value={form.firstName || ''}
+              onChange={handleChange}
+              error={errors.firstName}
+              placeholder="Alex"
+            />
+            <Input
+              label="Last Name"
+              type="text"
+              name="lastName"
+              required
+              value={form.lastName || ''}
+              onChange={handleChange}
+              error={errors.lastName}
+              placeholder="Morgan"
+            />
           </div>
 
+          {/* Optional Company Name for Company Rep */}
           {config.showCompanyField && (
-            <div>
-              <label className="block text-[0.78rem] font-medium text-[#b7bede] mb-1.5">Company Name</label>
-              <input
-                type="text"
-                name="companyName"
-                required
-                value={form.companyName}
-                onChange={handleChange}
-                placeholder="Acme Tech Inc."
-                className="w-full rounded-xl border border-white/12 bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder-[#6b7394] outline-none transition focus:border-[#22d3ee] focus:bg-[#22d3ee]/[0.06]"
-              />
-            </div>
+            <Input
+              label="Company Name"
+              type="text"
+              name="companyName"
+              required
+              value={form.companyName || ''}
+              onChange={handleChange}
+              error={errors.companyName}
+              placeholder="Acme Tech Inc."
+            />
           )}
 
-          <div>
-            <label className="block text-[0.78rem] font-medium text-[#b7bede] mb-1.5">Email Address</label>
-            <input
-              type="email"
-              name="email"
-              required
-              value={form.email}
-              onChange={handleChange}
-              placeholder="you@domain.com"
-              className="w-full rounded-xl border border-white/12 bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder-[#6b7394] outline-none transition focus:border-[#22d3ee] focus:bg-[#22d3ee]/[0.06]"
-            />
-          </div>
+          {/* Email with field-specific error from useForm */}
+          <Input
+            label="Email Address"
+            type="email"
+            name="email"
+            required
+            value={form.email || ''}
+            onChange={handleChange}
+            error={errors.email}
+            placeholder="you@domain.com"
+          />
 
-          <div>
-            <label className="block text-[0.78rem] font-medium text-[#b7bede] mb-1.5">Password</label>
-            <div className="relative flex items-center">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                required
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Minimum 8 characters"
-                className="w-full rounded-xl border border-white/12 bg-white/[0.05] px-4 py-2.5 pr-11 text-sm text-white placeholder-[#6b7394] outline-none transition focus:border-[#22d3ee] focus:bg-[#22d3ee]/[0.06]"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3 text-base text-slate-400 hover:text-white transition opacity-80"
-              >
-                {showPassword ? '🙈' : '👁'}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[0.78rem] font-medium text-[#b7bede] mb-1.5">Confirm Password</label>
-            <input
+          {/* Password with field-specific error from useForm */}
+          <div className="relative">
+            <Input
+              label="Password"
               type={showPassword ? 'text' : 'password'}
-              name="confirmPassword"
+              name="password"
               required
-              value={form.confirmPassword}
+              value={form.password || ''}
               onChange={handleChange}
-              placeholder="Re-enter your password"
-              className="w-full rounded-xl border border-white/12 bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder-[#6b7394] outline-none transition focus:border-[#22d3ee] focus:bg-[#22d3ee]/[0.06]"
+              error={errors.password}
+              placeholder="Minimum 8 characters"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-9 text-base text-slate-400 hover:text-white transition opacity-80 cursor-pointer"
+            >
+              {showPassword ? '🙈' : '👁'}
+            </button>
           </div>
 
+          {/* Confirm Password with field-specific error from useForm */}
+          <Input
+            label="Confirm Password"
+            type={showPassword ? 'text' : 'password'}
+            name="confirmPassword"
+            required
+            value={form.confirmPassword || ''}
+            onChange={handleChange}
+            error={errors.confirmPassword}
+            placeholder="Re-enter your password"
+          />
+
+          {/* Terms checkbox */}
           <div className="mt-1">
             <label className="flex items-start gap-2.5 cursor-pointer text-[0.78rem] text-[#a8b0cc]">
               <input
                 type="checkbox"
                 name="agreeTerms"
-                checked={form.agreeTerms}
+                checked={form.agreeTerms || false}
                 onChange={handleChange}
                 className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 accent-cyan-400"
               />
@@ -227,15 +215,17 @@ export default function Register() {
             </label>
           </div>
 
-          {/* Submit Button */}
-          <button
+          {/* Submit Button using useForm loading state */}
+          <Button
             type="submit"
-            disabled={loading}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#22d3ee] to-[#818cf8] py-3.5 text-sm font-semibold text-[#0b0f1e] shadow-[0_8px_20px_rgba(34,211,238,0.25)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(34,211,238,0.35)] disabled:opacity-60 cursor-pointer group"
+            isLoading={loading}
+            variant="primary"
+            size="lg"
+            className="mt-2 w-full btn-gradient-shimmer"
           >
-            <span>{loading ? 'Creating Account…' : 'Create Account'}</span>
-            <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
-          </button>
+            <span>Create Account</span>
+            <span className="font-bold">→</span>
+          </Button>
         </form>
 
         {/* Social Login Separator */}
@@ -277,7 +267,7 @@ export default function Register() {
         {/* Footer Link */}
         <p className="mt-6 text-center text-xs text-[#99a2c2]">
           Already have an account?{' '}
-          <Link to={config.loginHref} className="font-semibold text-[#67e8f9] hover:underline">
+          <Link to={config.loginHref} className="font-semibold text-[#67e8f9] hover:underline transition hover:text-cyan-300">
             Sign in
           </Link>
         </p>

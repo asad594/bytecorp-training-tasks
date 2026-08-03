@@ -1,29 +1,25 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import AuthLayout from '../../components/common/AuthLayout'
+import Button from '../../components/common/Button'
+import Input from '../../components/common/Input'
+// Wired custom hook (useForm)
+import useForm from '../../hooks/useForm'
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
+  // Keep success message as local state
   const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setMessage('')
-    setError('')
-
-    try {
-      console.log('Sending forgot password request for:', email)
+  // Wired useForm custom hook for form values, errors, and submit handling
+  const { form, errors, loading, handleChange, handleSubmit } = useForm(
+    { email: '' },
+    async () => {
+      setMessage('')
+      // Simulate API call to POST /accounts/password/forgot/
       await new Promise((resolve) => setTimeout(resolve, 800))
       setMessage('If an account with that email exists, a password reset link has been sent to your email.')
-    } catch (err) {
-      setError('Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
     }
-  }
+  )
 
   return (
     <AuthLayout
@@ -43,35 +39,34 @@ export default function ForgotPassword() {
           </div>
         )}
 
-        {error && (
+        {errors.general && (
           <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs text-red-300">
-            {error}
+            {errors.general}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-[0.78rem] font-medium text-[#b7bede] mb-1.5">
-              Email Address
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              className="w-full rounded-xl border border-white/12 bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-[#6b7394] outline-none transition-all duration-200 focus:border-[#22d3ee] focus:bg-[#22d3ee]/[0.08] focus:shadow-[0_0_15px_rgba(34,211,238,0.2)]"
-            />
-          </div>
+          <Input
+            label="Email Address"
+            type="email"
+            name="email"
+            required
+            value={form.email || ''}
+            onChange={handleChange}
+            error={errors.email}
+            placeholder="you@company.com"
+          />
 
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl btn-gradient-shimmer py-3.5 text-sm font-semibold text-[#0b0f1e] shadow-[0_8px_20px_rgba(34,211,238,0.3)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(34,211,238,0.45)] active:scale-98 disabled:opacity-60 cursor-pointer group"
+            isLoading={loading}
+            variant="primary"
+            size="lg"
+            className="mt-2 w-full btn-gradient-shimmer"
           >
-            <span>{loading ? 'Sending link…' : 'Send Reset Link'}</span>
-            <span className="transition-transform duration-200 group-hover:translate-x-1.5 font-bold">→</span>
-          </button>
+            <span>Send Reset Link</span>
+            <span className="font-bold">→</span>
+          </Button>
         </form>
 
         <p className="mt-6 text-center text-xs text-[#99a2c2]">

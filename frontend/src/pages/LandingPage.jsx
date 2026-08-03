@@ -1,56 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-
-// Animated Counter Component using IntersectionObserver and Ease-Out Deceleration
-function AnimatedCounter({ end, duration = 2000, prefix = '', suffix = '', decimals = 0 }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef(null)
-  const hasAnimated = useRef(false)
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated.current) {
-          hasAnimated.current = true
-          const startTime = performance.now()
-
-          const updateCounter = (currentTime) => {
-            const elapsedTime = currentTime - startTime
-            const progress = Math.min(elapsedTime / duration, 1)
-
-            // Cubic ease-out deceleration
-            const easeOutProgress = 1 - Math.pow(1 - progress, 3)
-            const currentVal = easeOutProgress * end
-
-            setCount(currentVal)
-
-            if (progress < 1) {
-              requestAnimationFrame(updateCounter)
-            } else {
-              setCount(end)
-            }
-          }
-
-          requestAnimationFrame(updateCounter)
-        }
-      },
-      { threshold: 0.2 }
-    )
-
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [end, duration])
-
-  return (
-    <span ref={ref}>
-      {prefix}
-      {decimals > 0
-        ? count.toFixed(decimals)
-        : Math.floor(count).toLocaleString()}
-      {suffix}
-    </span>
-  )
-}
+import AnimatedCounter from '../components/common/AnimatedCounter'
+import Button from '../components/common/Button'
+import CategoryCard from '../components/landing/CategoryCard'
+import JobCard from '../components/jobs/JobCard'
+import JobDetailModal from '../components/jobs/JobDetailModal'
+import useBookmarks from '../hooks/useBookmarks'
 
 const sampleCategories = [
   { id: 'frontend', name: 'Frontend & UI', count: 430, icon: '💻', avgSalary: 'PKR 150k-280k' },
@@ -207,10 +162,12 @@ export default function LandingPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [locationFilter, setLocationFilter] = useState('All Locations')
   const [activeTab, setActiveTab] = useState('All')
-  const [bookmarkedJobs, setBookmarkedJobs] = useState({})
+  const { bookmarks: bookmarkedJobs, toggleBookmark } = useBookmarks()
   const [selectedJobModal, setSelectedJobModal] = useState(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [appliedSuccess, setAppliedSuccess] = useState(false)
+
+  const submitTimerRef = useRef(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -221,13 +178,11 @@ export default function LandingPage() {
       }
     }
     window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
+    }
   }, [])
-
-  const toggleBookmark = (e, id) => {
-    e.stopPropagation()
-    setBookmarkedJobs((prev) => ({ ...prev, [id]: !prev[id] }))
-  }
 
   const handleQuickApply = (e, job) => {
     e.stopPropagation()
@@ -235,10 +190,16 @@ export default function LandingPage() {
     setAppliedSuccess(false)
   }
 
+  const handleCloseModal = () => {
+    if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
+    setSelectedJobModal(null)
+  }
+
   const submitApplication = (e) => {
     e.preventDefault()
     setAppliedSuccess(true)
-    setTimeout(() => {
+    if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
+    submitTimerRef.current = setTimeout(() => {
       setSelectedJobModal(null)
       setAppliedSuccess(false)
       navigate('/login/job_seeker')
@@ -305,18 +266,21 @@ export default function LandingPage() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            <button
+            <Button
+              variant="ghost"
+              size="md"
               onClick={() => navigate('/login/job_seeker')}
-              className="px-4 py-2 text-sm font-semibold text-slate-300 transition hover:text-white hover:scale-105 cursor-pointer"
             >
               Sign in
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
               onClick={() => navigate('/register/job_seeker')}
-              className="rounded-xl btn-gradient-shimmer px-5 py-2.5 text-sm font-semibold text-[#0b0f1e] shadow-[0_0_20px_rgba(34,211,238,0.35)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(34,211,238,0.55)] active:scale-95 cursor-pointer"
+              className="btn-gradient-shimmer"
             >
               Get Started →
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -378,16 +342,18 @@ export default function LandingPage() {
                 </div>
 
                 {/* Search Button */}
-                <button
+                <Button
+                  variant="primary"
+                  size="md"
                   onClick={() => {
                     const jobsElem = document.getElementById('jobs')
                     jobsElem?.scrollIntoView({ behavior: 'smooth' })
                   }}
-                  className="flex items-center justify-center gap-2 rounded-xl btn-gradient-shimmer px-6 py-3.5 text-sm font-bold text-[#0b0f1e] shadow-[0_0_20px_rgba(34,211,238,0.35)] transition duration-200 hover:scale-[1.03] active:scale-98 cursor-pointer"
+                  className="btn-gradient-shimmer px-6 py-3.5"
                 >
                   <span>Search Roles</span>
                   <span>→</span>
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -549,26 +515,15 @@ export default function LandingPage() {
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {sampleCategories.map((cat) => (
-            <div
+            <CategoryCard
               key={cat.id}
+              category={cat}
               onClick={() => {
                 setSearchQuery(cat.name.split(' ')[0])
                 const elem = document.getElementById('jobs')
                 elem?.scrollIntoView({ behavior: 'smooth' })
               }}
-              className="group relative rounded-2xl border border-white/12 bg-white/[0.05] p-6 backdrop-blur-xl transition duration-300 hover:-translate-y-2 hover:border-cyan-400/50 hover:bg-white/[0.09] hover:shadow-[0_12px_35px_rgba(34,211,238,0.2)] cursor-pointer"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-3xl transition duration-300 group-hover:scale-125">{cat.icon}</span>
-                <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-300 group-hover:bg-cyan-400 group-hover:text-[#0b0f1e] transition">
-                  <AnimatedCounter end={cat.count} suffix="+" /> roles
-                </span>
-              </div>
-              <h3 className="font-sora text-lg font-bold text-white group-hover:text-cyan-300 transition">
-                {cat.name}
-              </h3>
-              <p className="mt-1 text-xs text-[#9aa3c2]">Avg Salary: {cat.avgSalary}</p>
-            </div>
+            />
           ))}
         </div>
       </section>
@@ -591,11 +546,10 @@ export default function LandingPage() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 cursor-pointer ${
-                  activeTab === tab
+                className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 cursor-pointer ${activeTab === tab
                     ? 'bg-gradient-to-r from-cyan-400 to-indigo-400 text-[#0b0f1e] shadow-[0_0_15px_rgba(34,211,238,0.3)] scale-[1.02]'
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -606,64 +560,14 @@ export default function LandingPage() {
         {/* Jobs Feed Grid */}
         <div className="mt-8 grid gap-5 md:grid-cols-2">
           {filteredJobs.map((job) => (
-            <div
+            <JobCard
               key={job.id}
+              job={job}
+              isBookmarked={!!bookmarkedJobs[job.id]}
+              onToggleBookmark={toggleBookmark}
+              onQuickApply={handleQuickApply}
               onClick={() => setSelectedJobModal(job)}
-              className="group relative flex flex-col justify-between rounded-2xl border border-white/12 bg-white/[0.05] p-6 backdrop-blur-xl transition duration-300 hover:-translate-y-1.5 hover:border-cyan-400/50 hover:bg-white/[0.09] hover:shadow-[0_15px_40px_rgba(0,0,0,0.5)] cursor-pointer"
-            >
-              <div>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3.5">
-                    <div
-                      className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${job.logoBg} font-sora font-bold text-white text-lg shadow-md transition duration-300 group-hover:scale-110`}
-                    >
-                      {job.logoLetter}
-                    </div>
-                    <div>
-                      <h3 className="font-sora text-base font-bold text-white group-hover:text-cyan-300 transition">
-                        {job.title}
-                      </h3>
-                      <p className="text-xs text-[#9aa3c2] mt-0.5">
-                        {job.company} · <span className="text-slate-300">{job.location}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={(e) => toggleBookmark(e, job.id)}
-                    className="text-lg transition duration-200 hover:scale-125 cursor-pointer p-1"
-                    title="Bookmark role"
-                  >
-                    {bookmarkedJobs[job.id] ? '⭐' : '☆'}
-                  </button>
-                </div>
-
-                {/* Tech Tags */}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {job.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition group-hover:border-cyan-400/30 group-hover:bg-cyan-400/10 group-hover:text-cyan-300"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Card Footer */}
-              <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4 text-xs">
-                <span className="font-sora font-bold text-[#67e8f9] text-sm">
-                  {job.salary}
-                </span>
-                <button
-                  onClick={(e) => handleQuickApply(e, job)}
-                  className="rounded-xl bg-cyan-400/10 border border-cyan-400/30 px-4 py-2 font-semibold text-cyan-300 transition duration-200 hover:bg-cyan-400 hover:text-[#0b0f1e] hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] cursor-pointer"
-                >
-                  Quick Apply →
-                </button>
-              </div>
-            </div>
+            />
           ))}
         </div>
       </section>
@@ -743,18 +647,21 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <button
+            <Button
+              variant="primary"
+              size="lg"
               onClick={() => navigate('/register/job_seeker')}
-              className="rounded-xl btn-gradient-shimmer px-8 py-3.5 text-sm font-bold text-[#0b0f1e] shadow-[0_0_25px_rgba(34,211,238,0.4)] transition duration-200 hover:scale-105 cursor-pointer"
+              className="btn-gradient-shimmer"
             >
               Sign Up as Job Seeker →
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
               onClick={() => navigate('/login/company_rep')}
-              className="rounded-xl border border-white/20 bg-white/10 px-8 py-3.5 text-sm font-bold text-white backdrop-blur-md transition hover:bg-white/20 hover:border-cyan-400/40 cursor-pointer"
             >
               Employer Login
-            </button>
+            </Button>
           </div>
         </div>
       </section>
@@ -815,76 +722,12 @@ export default function LandingPage() {
       )}
 
       {/* Interactive Job Detail Modal */}
-      {selectedJobModal && (
-        <div
-          onClick={() => setSelectedJobModal(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md animate-fade-in-up"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-lg rounded-3xl border border-white/20 bg-[#0e1428] p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedJobModal(null)}
-              className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-sm font-bold text-slate-400 transition hover:bg-white/20 hover:text-white cursor-pointer"
-            >
-              ✕
-            </button>
-
-            {appliedSuccess ? (
-              <div className="py-8 text-center">
-                <span className="text-5xl">🎉</span>
-                <h3 className="mt-4 font-sora text-xl font-bold text-white">Application Received!</h3>
-                <p className="mt-2 text-xs text-slate-300">
-                  Redirecting you to complete your profile sign in...
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-3.5 mb-4">
-                  <div
-                    className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${selectedJobModal.logoBg} font-sora font-bold text-white text-xl shadow-lg`}
-                  >
-                    {selectedJobModal.logoLetter}
-                  </div>
-                  <div>
-                    <h3 className="font-sora text-lg font-bold text-white">{selectedJobModal.title}</h3>
-                    <p className="text-xs text-[#9aa3c2]">{selectedJobModal.company} · {selectedJobModal.location}</p>
-                  </div>
-                </div>
-
-                <div className="mb-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs">
-                  <p className="text-slate-300">{selectedJobModal.description}</p>
-                </div>
-
-                <div className="mb-4">
-                  <h4 className="text-xs font-semibold text-cyan-300 uppercase tracking-wide mb-2">Key Requirements:</h4>
-                  <ul className="space-y-1 text-xs text-slate-300 list-disc list-inside">
-                    {selectedJobModal.requirements.map((req, idx) => (
-                      <li key={idx}>{req}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="flex items-center justify-between border-t border-white/10 pt-4 mb-6">
-                  <span className="font-sora font-bold text-[#67e8f9] text-base">{selectedJobModal.salary}</span>
-                  <span className="text-xs text-slate-400">{selectedJobModal.posted}</span>
-                </div>
-
-                <form onSubmit={submitApplication} className="space-y-3">
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl btn-gradient-shimmer py-3.5 text-sm font-bold text-[#0b0f1e] shadow-[0_0_20px_rgba(34,211,238,0.4)] transition hover:scale-[1.02] cursor-pointer"
-                  >
-                    Submit Quick Application →
-                  </button>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      <JobDetailModal
+        job={selectedJobModal}
+        onClose={handleCloseModal}
+        onSubmitApplication={submitApplication}
+        appliedSuccess={appliedSuccess}
+      />
     </div>
   )
 }
