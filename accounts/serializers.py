@@ -1,4 +1,7 @@
 from rest_framework import serializers
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
 from accounts.models import User
 from accounts.validators import validate_strong_password
 
@@ -67,7 +70,72 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class CompanyRepRegisterSerializer(RegisterSerializer):
+    """
+    Same as RegisterSerializer, but role is fixed to 'company_rep'.
+
+    No company information is collected here. After logging in, the
+    company_rep either creates a new company (becoming its owner) or
+    joins an existing one using its registration number, via the
+    companies API (/companies/ and /companies/join/).
+    """
+
+    class Meta(RegisterSerializer.Meta):
+        fields = RegisterSerializer.Meta.fields
+
+    def create(self, validated_data):
+        validated_data['role'] = 'company_rep'
+        return super().create(validated_data)
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['user_id', 'name', 'email', 'role', 'bio', 'years_of_experience']
+
+
+# ---------------------------------------------------------------------------
+# OAuth (Google) - job seekers only
+# ---------------------------------------------------------------------------
+
+class GoogleAuthSerializer(serializers.Serializer):
+    id_token = serializers.CharField(
+        error_messages={'blank': 'Google id_token is required.'}
+    )
+
+
+# ---------------------------------------------------------------------------
+# Forgot / Reset Password
+# ---------------------------------------------------------------------------
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(
+        error_messages={'blank': 'Email is required.'}
+    )
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    uid = serializers.CharField(
+        error_messages={'blank': 'uid is required.'}
+    )
+    token = serializers.CharField(
+        error_messages={'blank': 'Token is required.'}
+    )
+    new_password = serializers.CharField(
+        write_only=True,
+        validators=[validate_strong_password],
+        error_messages={'blank': 'New password is required.'}
+    )
+
+    def validate(self, attrs):
+        try:
+            uid = force_str(urlsafe_base64_decode(attrs['uid']))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise serializers.ValidationError('Invalid reset link.')
+
+        if not default_token_generator.check_token(user, attrs['token']):
+            raise serializers.ValidationError('Invalid or expired reset link.')
+
+        attrs['user'] = user
+        return attrs

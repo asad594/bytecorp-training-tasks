@@ -25,6 +25,11 @@ class User(AbstractBaseUser):
         ('admin', 'Admin'),
     ]
 
+    AUTH_PROVIDER_CHOICES = [
+        ('email', 'Email'),
+        ('google', 'Google'),
+    ]
+
     last_login = None
 
     user_id = models.AutoField(primary_key=True)
@@ -34,6 +39,12 @@ class User(AbstractBaseUser):
     bio = models.TextField(blank=True, null=True)
     years_of_experience = models.IntegerField(default=0)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='job_seeker')
+
+    # OAuth support (Google) — job seekers only.
+    auth_provider = models.CharField(
+        max_length=20, choices=AUTH_PROVIDER_CHOICES, default='email'
+    )
+    provider_id = models.CharField(max_length=255, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)

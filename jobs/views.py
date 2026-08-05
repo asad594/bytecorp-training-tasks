@@ -32,6 +32,9 @@ class JobListCreateView(APIView):
         if not CompanyMember.objects.filter(user=request.user, company=company).exists():
             raise PermissionDenied('You can only post jobs for your own company.')
 
+        if not company.is_verified:
+            raise PermissionDenied('Your company is not yet verified by the admin. You cannot post jobs until it is approved.')
+
         serializer = JobSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(updated_by=request.user)
@@ -62,7 +65,7 @@ class JobDetailView(APIView):
         if not self.is_member(request.user, job.company):
             raise PermissionDenied('You can only update jobs for your own company.')
 
-        serializer = JobSerializer(job, data=request.data)
+        serializer = JobSerializer(job, data=request.data, partial=False)
         serializer.is_valid(raise_exception=True)
         serializer.save(updated_by=request.user)
         return Response(serializer.data)

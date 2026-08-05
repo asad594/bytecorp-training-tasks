@@ -5,11 +5,11 @@ from accounts.models import User
 class Company(models.Model):
     company_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=120)
+    registration_number = models.CharField(max_length=50, unique=True, null=True, blank=True)
     description = models.TextField(blank=True, null=True)
     website = models.CharField(max_length=120, blank=True, null=True)
     location = models.CharField(max_length=100, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     updated_by = models.ForeignKey(
@@ -38,6 +38,11 @@ class Company(models.Model):
 
 
 class CompanyMember(models.Model):
+    ROLE_CHOICES = [
+        ('owner', 'Owner'),
+        ('member', 'Member'),
+    ]
+
     pk = models.CompositePrimaryKey('user_id', 'company_id')
     user = models.ForeignKey(
         User,
@@ -51,10 +56,11 @@ class CompanyMember(models.Model):
         related_name='members',
         db_column='company_id'
     )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'company_members'
 
     def __str__(self):
-        return f"{self.user.email} -> {self.company.name}"
+        return f"{self.user.email} -> {self.company.name} ({self.role})"
