@@ -38,8 +38,8 @@ export default function Button({
   return (
     <button
       type={type}
-      onClick={onClick}
       disabled={disabled || isLoading}
+      onClick={onClick}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
