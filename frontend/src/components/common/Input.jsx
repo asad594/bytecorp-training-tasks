@@ -1,14 +1,15 @@
 export default function Input({
   label,
-  error,
-  icon,
   type = 'text',
-  placeholder = '',
+  name,
   value,
   onChange,
-  required = false,
-  className = '',
+  error,
+  placeholder = '',
+  icon = null,
   containerClassName = '',
+  className = '',
+  required = false,
   ...props
 }) {
   return (
@@ -16,18 +17,22 @@ export default function Input({
       {label && (
         <label className="text-xs font-semibold text-[#a8b0cc] flex items-center justify-between">
           <span>
-            {label} {required && <span className="text-cyan-400">*</span>}
+            {label}
+            {required && <span className="ml-1 text-cyan-400">*</span>}
           </span>
         </label>
       )}
+
       <div className="relative flex items-center">
         {icon && (
           <div className="absolute left-3.5 text-slate-400 pointer-events-none flex items-center justify-center">
             {icon}
           </div>
         )}
+
         <input
           type={type}
+          name={name}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
@@ -42,6 +47,7 @@ export default function Input({
           {...props}
         />
       </div>
+
       {error && (
         <p className="text-[0.75rem] text-red-400 mt-0.5 animate-fade-in-up font-medium">
           {error}

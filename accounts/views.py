@@ -1,8 +1,11 @@
 from django.conf import settings
+from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.core.mail import send_mail
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,13 +16,10 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from google.oauth2 import id_token as google_id_token
-from google.auth.transport import requests as google_requests
-
 from accounts.models import User
 from accounts.serializers import (
     RegisterSerializer, CompanyRepRegisterSerializer, UserSerializer,
-    GoogleAuthSerializer, ForgotPasswordSerializer, ResetPasswordSerializer,
+    GoogleAuthSerializer, ForgotPasswordSerializer, ResetPasswordSerializer
 )
 
 
@@ -100,7 +100,7 @@ class AdminLoginView(TokenObtainPairView):
 
 class AdminCreateView(APIView):
     """
-    accounts/admin/create/ - protected endpoint behind the admin dashboard's
+    accounts/admin/create/ — protected endpoint behind the admin dashboard's
     "Add another admin" form. Only an authenticated admin can hit this.
     """
     permission_classes = [IsAuthenticated]
@@ -178,7 +178,7 @@ class GoogleLoginView(APIView):
             idinfo = google_id_token.verify_oauth2_token(
                 token, google_requests.Request(), settings.GOOGLE_CLIENT_ID
             )
-        except ValueError:
+        except Exception:
             raise AuthenticationFailed('Invalid or expired Google token.')
 
         email = idinfo.get('email')
@@ -252,9 +252,11 @@ class ResetPasswordView(APIView):
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
 
-        user.set_password(serializer.validated_data['new_password'])
+        user = serializer.validated_data['user']
+        new_password = serializer.validated_data['new_password']
+
+        user.set_password(new_password)
         user.save()
 
         return Response(
