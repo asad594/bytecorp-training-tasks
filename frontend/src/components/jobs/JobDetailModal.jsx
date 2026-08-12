@@ -29,7 +29,7 @@ export default function JobDetailModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg rounded-3xl border border-white/20 bg-[#0e1428] p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
+        className="relative w-full max-w-lg rounded-3xl border border-white/20 bg-brand-card p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
       >
         {/* Close Button */}
         <button
@@ -60,7 +60,7 @@ export default function JobDetailModal({
                 <h3 id="job-modal-title" className="font-sora text-lg font-bold text-white">
                   {job.title}
                 </h3>
-                <p className="text-xs text-[#9aa3c2]">{job.company} · {job.location}</p>
+                <p className="text-xs text-text-secondary">{job.company} · {job.location}</p>
               </div>
             </div>
 
@@ -78,7 +78,7 @@ export default function JobDetailModal({
             </div>
 
             <div className="flex items-center justify-between border-t border-white/10 pt-4 mb-6">
-              <span className="font-sora font-bold text-[#67e8f9] text-base">{job.salary}</span>
+              <span className="font-sora font-bold text-cyan-accent text-base">{job.salary}</span>
               <span className="text-xs text-slate-400">{job.posted}</span>
             </div>
 

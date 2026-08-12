@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import { BriefcaseIcon } from '@/assets/icons'
+import colors from '@/styles/colors'
 
 const jobCardsData = {
   jobs: [
@@ -76,10 +78,7 @@ export default function AuthLayout({
         <div className="w-full flex-1 text-center lg:text-left">
           {/* Brand Mark */}
           <Link to="/" className="inline-flex items-center gap-2 text-[1.1rem] font-bold font-sora text-white mb-6 transition duration-200 hover:scale-105">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]">
-              <rect x="3" y="7" width="18" height="13" rx="2" stroke="#22d3ee" strokeWidth="2" />
-              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#22d3ee" strokeWidth="2" />
-            </svg>
+            <BriefcaseIcon width="24" height="24" stroke={colors.gradient.from} strokeWidth="2" className="drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
             <span className="bg-gradient-to-r from-white to-cyan-300 bg-clip-text text-transparent">{badgeLabel}</span>
           </Link>
 
@@ -96,7 +95,7 @@ export default function AuthLayout({
           </h1>
 
           {/* Subheading */}
-          <p className="text-sm sm:text-base leading-relaxed text-[#a8b0cc] max-w-[420px] mx-auto lg:mx-0 mb-8">
+          <p className="text-sm sm:text-base leading-relaxed text-text-desc max-w-[420px] mx-auto lg:mx-0 mb-8">
             {subheading}
           </p>
 
@@ -115,25 +114,25 @@ export default function AuthLayout({
                   }}
                 >
                   <div className="flex items-center gap-3 mb-2.5">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-400 font-bold text-[#0b0f1e] text-sm shadow-md">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-400 font-bold text-brand-bg text-sm shadow-md">
                       {job.company.charAt(0)}
                     </div>
                     <div className="overflow-hidden text-left">
                       <h4 className="text-sm font-semibold text-white truncate group-hover:text-cyan-300 transition">{job.title}</h4>
-                      <span className="text-xs text-[#9aa3c2] block truncate">{job.company}</span>
+                      <span className="text-xs text-text-secondary block truncate">{job.company}</span>
                     </div>
                   </div>
 
-                  <div className="flex justify-between text-xs text-[#9aa3c2] mb-2.5">
+                  <div className="flex justify-between text-xs text-text-secondary mb-2.5">
                     <span>{job.location}</span>
-                    <span className="font-bold text-[#67e8f9]">{job.salary}</span>
+                    <span className="font-bold text-cyan-accent">{job.salary}</span>
                   </div>
 
                   <div className="flex gap-1.5 flex-wrap">
                     {job.tags.map((t) => (
                       <span
                         key={t}
-                        className="rounded-full border border-white/10 bg-white/10 px-2.5 py-0.5 text-[0.68rem] text-[#d3d8ee] transition hover:bg-cyan-400/20 hover:text-cyan-300"
+                        className="rounded-full border border-white/10 bg-white/10 px-2.5 py-0.5 text-[0.68rem] text-tag-text transition hover:bg-cyan-400/20 hover:text-cyan-300"
                       >
                         {t}
                       </span>

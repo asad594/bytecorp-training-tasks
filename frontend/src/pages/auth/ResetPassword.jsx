@@ -52,7 +52,7 @@ export default function ResetPassword() {
       <div className="rounded-[20px] border border-white/14 bg-white/[0.06] p-7 sm:p-9 shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-[22px] transition-all duration-300 focus-within:border-cyan-400/50 animate-fade-in-up">
         
         <h2 className="font-sora text-2xl font-bold text-white mb-1">Reset Password</h2>
-        <p className="text-xs text-[#99a2c2] mb-6">Create a new secure password for your account.</p>
+        <p className="text-xs text-text-sub mb-6">Create a new secure password for your account.</p>
 
         {success ? (
           <div className="text-center py-4">
@@ -126,9 +126,9 @@ export default function ResetPassword() {
         )}
 
         {!success && (
-          <p className="mt-6 text-center text-xs text-[#99a2c2]">
+          <p className="mt-6 text-center text-xs text-text-sub">
             Remember your password?{' '}
-            <Link to="/login/job_seeker" className="font-semibold text-[#67e8f9] hover:underline transition hover:text-cyan-300">
+            <Link to="/login/job_seeker" className="font-semibold text-cyan-accent hover:underline transition hover:text-cyan-300">
               Back to Sign in
             </Link>
           </p>
