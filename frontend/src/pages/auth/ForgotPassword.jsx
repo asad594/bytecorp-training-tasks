@@ -13,7 +13,7 @@ export default function ForgotPassword() {
   // Wired useForm custom hook for form values, errors, and submit handling
   const { form, errors, loading, handleChange, handleSubmit } = useForm(
     { email: '' },
-    async () => {
+    async (_values) => {
       setMessage('')
       // Simulate API call to POST /accounts/password/forgot/
       await new Promise((resolve) => setTimeout(resolve, 800))
@@ -31,7 +31,7 @@ export default function ForgotPassword() {
       <div className="rounded-[20px] border border-white/14 bg-white/[0.06] p-7 sm:p-9 shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-[22px] transition-all duration-300 focus-within:border-cyan-400/50 animate-fade-in-up">
         
         <h2 className="font-sora text-2xl font-bold text-white mb-1">Forgot Password</h2>
-        <p className="text-xs text-[#99a2c2] mb-6">Enter your email to receive a password reset link.</p>
+        <p className="text-xs text-text-sub mb-6">Enter your email to receive a password reset link.</p>
 
         {message && (
           <div className="mb-4 rounded-xl border border-cyan-400/30 bg-cyan-400/10 p-3.5 text-xs text-cyan-200">
@@ -69,9 +69,9 @@ export default function ForgotPassword() {
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-[#99a2c2]">
+        <p className="mt-6 text-center text-xs text-text-sub">
           Remember your password?{' '}
-          <Link to="/login/job_seeker" className="font-semibold text-[#67e8f9] hover:underline transition hover:text-cyan-300">
+          <Link to="/login/job_seeker" className="font-semibold text-cyan-accent hover:underline transition hover:text-cyan-300">
             Back to Sign in
           </Link>
         </p>

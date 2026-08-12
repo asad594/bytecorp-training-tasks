@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { BriefcaseIcon } from '@/assets/icons'
+import colors from '@/styles/colors'
 import AnimatedCounter from '../components/common/AnimatedCounter'
 import Button from '../components/common/Button'
 import CategoryCard from '../components/landing/CategoryCard'
@@ -19,16 +21,16 @@ const sampleCategories = [
 const sampleFeaturedJobs = [
   {
     id: 1,
-    title: 'Senior Frontend Engineer (React/TypeScript)',
+    title: 'Senior Frontend Engineer',
     company: 'ByteCorp Technologies',
     logoLetter: 'B',
-    logoBg: 'from-cyan-400 to-blue-500',
+    logoBg: `from-[${colors.gradient.accentFrom}] to-purple-600`,
     location: 'Remote · Full-time',
     salary: 'PKR 220k - 320k / mo',
     type: 'Remote',
     posted: '2 hours ago',
     tags: ['React', 'TypeScript', 'Tailwind', 'Next.js'],
-    description: 'We are seeking a Senior Frontend Engineer to build high-performance React applications with dynamic data streams and modular architecture.',
+    description: 'We are seeking an experienced Frontend Engineer to build high-performance React applications. with dynamic data streams and modular architecture.',
     requirements: ['4+ years with React & TypeScript', 'Experience with Tailwind & Next.js', 'State management (Redux/Zustand)'],
     featured: true,
   },
@@ -37,7 +39,7 @@ const sampleFeaturedJobs = [
     title: 'Python / Django Backend Lead',
     company: 'NimbusWorks',
     logoLetter: 'N',
-    logoBg: 'from-[#818cf8] to-purple-600',
+    logoBg: `from-[${colors.gradient.accentFrom}] to-purple-600`,
     location: 'Karachi · Hybrid',
     salary: 'PKR 250k - 380k / mo',
     type: 'Hybrid',
@@ -226,22 +228,19 @@ export default function LandingPage() {
   })
 
   return (
-    <div className="relative min-h-screen bg-[#0b0f1e] text-slate-100 font-sans selection:bg-cyan-500 selection:text-slate-900 overflow-hidden">
+    <div className="relative min-h-screen bg-brand-bg text-slate-100 font-sans selection:bg-cyan-500 selection:text-slate-900 overflow-hidden">
       {/* Background Animated Glow Orbs */}
       <div className="pointer-events-none fixed -top-40 -left-40 h-[550px] w-[550px] rounded-full bg-cyan-500/15 blur-[130px] animate-pulse-glow" />
       <div className="pointer-events-none fixed top-1/3 -right-40 h-[500px] w-[500px] rounded-full bg-indigo-500/20 blur-[140px] animate-pulse-glow" style={{ animationDelay: '3s' }} />
       <div className="pointer-events-none fixed bottom-10 left-1/4 h-[450px] w-[450px] rounded-full bg-teal-500/15 blur-[120px] animate-pulse-glow" style={{ animationDelay: '6s' }} />
 
       {/* Sticky Header Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#0b0f1e]/85 backdrop-blur-xl transition-all duration-300">
+      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-brand-bg/85 backdrop-blur-xl transition-all duration-300">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 font-sora text-xl font-extrabold text-white group">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 shadow-[0_0_18px_rgba(34,211,238,0.5)] transition duration-300 group-hover:scale-110">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="7" width="18" height="13" rx="2" stroke="#0b0f1e" strokeWidth="2.5" />
-                <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#0b0f1e" strokeWidth="2.5" />
-              </svg>
+              <BriefcaseIcon width="20" height="20" stroke={colors.background.main} strokeWidth="2.5" />
             </div>
             <span className="bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent group-hover:to-indigo-300 transition">
               JobBoard
@@ -306,7 +305,7 @@ export default function LandingPage() {
               right now.
             </h1>
 
-            <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#a8b0cc] sm:text-lg">
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-text-desc sm:text-lg">
               Discover curated remote & hybrid roles in software engineering, AI, product design, and DevOps across Pakistan and worldwide.
             </p>
 
@@ -331,7 +330,7 @@ export default function LandingPage() {
                   <select
                     value={locationFilter}
                     onChange={(e) => setLocationFilter(e.target.value)}
-                    className="w-full bg-transparent text-sm text-white outline-none cursor-pointer [&>option]:bg-[#0b0f1e]"
+                    className="w-full bg-transparent text-sm text-white outline-none cursor-pointer [&>option]:bg-brand-bg"
                   >
                     <option value="All Locations">All Locations</option>
                     <option value="Remote">Remote</option>
@@ -382,21 +381,21 @@ export default function LandingPage() {
               <div className="absolute top-0 left-0 w-full rounded-2xl border border-white/12 bg-white/[0.06] p-5 backdrop-blur-xl shadow-2xl transition-all duration-300 animate-float -rotate-6 hover:rotate-0 hover:scale-105 hover:z-30 hover:border-cyan-400/60 hover:shadow-[0_15px_40px_rgba(34,211,238,0.3)] cursor-pointer">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 font-bold text-[#0b0f1e] shadow-md">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 font-bold text-brand-bg shadow-md">
                       B
                     </div>
                     <div>
                       <h4 className="font-sora font-semibold text-white text-sm">Senior Frontend Engineer</h4>
-                      <p className="text-xs text-[#9aa3c2]">ByteCorp Technologies · Remote</p>
+                      <p className="text-xs text-text-secondary">ByteCorp Technologies · Remote</p>
                     </div>
                   </div>
                   <span className="rounded-full bg-cyan-400/10 px-2.5 py-0.5 text-[0.7rem] font-bold text-cyan-300">
                     New
                   </span>
                 </div>
-                <div className="flex justify-between text-xs text-[#9aa3c2] mb-3">
+                <div className="flex justify-between text-xs text-text-secondary mb-3">
                   <span>Full-time</span>
-                  <span className="font-bold text-[#67e8f9]">PKR 220k - 320k</span>
+                  <span className="font-bold text-cyan-accent">PKR 220k - 320k</span>
                 </div>
                 <div className="flex gap-1.5">
                   <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[0.68rem] text-slate-200">React</span>
@@ -407,7 +406,7 @@ export default function LandingPage() {
 
               {/* Card 2 */}
               <div
-                className="absolute top-36 left-4 w-full rounded-2xl border border-white/14 bg-[#0e1428]/90 p-5 backdrop-blur-xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] transition-all duration-300 animate-float rotate-3 hover:rotate-0 hover:scale-105 hover:z-30 hover:border-cyan-400/60 hover:shadow-[0_15px_40px_rgba(34,211,238,0.3)] cursor-pointer"
+                className="absolute top-36 left-4 w-full rounded-2xl border border-white/14 bg-brand-card/90 p-5 backdrop-blur-xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] transition-all duration-300 animate-float rotate-3 hover:rotate-0 hover:scale-105 hover:z-30 hover:border-cyan-400/60 hover:shadow-[0_15px_40px_rgba(34,211,238,0.3)] cursor-pointer"
                 style={{ animationDelay: '1s' }}
               >
                 <div className="flex items-center justify-between mb-3">
@@ -417,16 +416,16 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <h4 className="font-sora font-semibold text-white text-sm">Django Backend Lead</h4>
-                      <p className="text-xs text-[#9aa3c2]">NimbusWorks · Karachi</p>
+                      <p className="text-xs text-text-secondary">NimbusWorks · Karachi</p>
                     </div>
                   </div>
                   <span className="rounded-full bg-indigo-400/10 px-2.5 py-0.5 text-[0.7rem] font-bold text-indigo-300">
                     Featured
                   </span>
                 </div>
-                <div className="flex justify-between text-xs text-[#9aa3c2] mb-3">
+                <div className="flex justify-between text-xs text-text-secondary mb-3">
                   <span>Hybrid</span>
-                  <span className="font-bold text-[#67e8f9]">PKR 250k - 380k</span>
+                  <span className="font-bold text-cyan-accent">PKR 250k - 380k</span>
                 </div>
                 <div className="flex gap-1.5">
                   <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[0.68rem] text-slate-200">Django</span>
@@ -442,21 +441,21 @@ export default function LandingPage() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 font-bold text-[#0b0f1e] shadow-md">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 font-bold text-brand-bg shadow-md">
                       S
                     </div>
                     <div>
                       <h4 className="font-sora font-semibold text-white text-sm">Lead UI/UX Designer</h4>
-                      <p className="text-xs text-[#9aa3c2]">Studio Forge · Lahore</p>
+                      <p className="text-xs text-text-secondary">Studio Forge · Lahore</p>
                     </div>
                   </div>
                   <span className="rounded-full bg-emerald-400/10 px-2.5 py-0.5 text-[0.7rem] font-bold text-emerald-300">
                     Verified
                   </span>
                 </div>
-                <div className="flex justify-between text-xs text-[#9aa3c2]">
+                <div className="flex justify-between text-xs text-text-secondary">
                   <span>Full-time</span>
-                  <span className="font-bold text-[#67e8f9]">PKR 180k - 260k</span>
+                  <span className="font-bold text-cyan-accent">PKR 180k - 260k</span>
                 </div>
               </div>
             </div>
@@ -471,7 +470,7 @@ export default function LandingPage() {
             <p className="font-sora text-3xl font-extrabold text-cyan-400 sm:text-4xl">
               <AnimatedCounter end={14800} suffix="+" />
             </p>
-            <p className="mt-1.5 text-xs text-[#9aa3c2] sm:text-sm group-hover:text-cyan-300 transition">
+            <p className="mt-1.5 text-xs text-text-secondary sm:text-sm group-hover:text-cyan-300 transition">
               Active Job Listings
             </p>
           </div>
@@ -479,7 +478,7 @@ export default function LandingPage() {
             <p className="font-sora text-3xl font-extrabold text-indigo-400 sm:text-4xl">
               <AnimatedCounter end={520} suffix="+" />
             </p>
-            <p className="mt-1.5 text-xs text-[#9aa3c2] sm:text-sm group-hover:text-indigo-300 transition">
+            <p className="mt-1.5 text-xs text-text-secondary sm:text-sm group-hover:text-indigo-300 transition">
               Verified Companies
             </p>
           </div>
@@ -487,7 +486,7 @@ export default function LandingPage() {
             <p className="font-sora text-3xl font-extrabold text-teal-300 sm:text-4xl">
               <AnimatedCounter end={98.4} suffix="%" decimals={1} />
             </p>
-            <p className="mt-1.5 text-xs text-[#9aa3c2] sm:text-sm group-hover:text-teal-200 transition">
+            <p className="mt-1.5 text-xs text-text-secondary sm:text-sm group-hover:text-teal-200 transition">
               Match Success Rate
             </p>
           </div>
@@ -495,7 +494,7 @@ export default function LandingPage() {
             <p className="font-sora text-3xl font-extrabold text-cyan-400 sm:text-4xl">
               &lt; <AnimatedCounter end={24} suffix=" hrs" />
             </p>
-            <p className="mt-1.5 text-xs text-[#9aa3c2] sm:text-sm group-hover:text-cyan-300 transition">
+            <p className="mt-1.5 text-xs text-text-secondary sm:text-sm group-hover:text-cyan-300 transition">
               Avg. Response Time
             </p>
           </div>
@@ -508,7 +507,7 @@ export default function LandingPage() {
           <h2 className="font-sora text-3xl font-bold text-white sm:text-4xl">
             Explore Opportunities by Category
           </h2>
-          <p className="mt-3 text-sm text-[#a8b0cc] sm:text-base">
+          <p className="mt-3 text-sm text-text-desc sm:text-base">
             Find the right track tailored to your specialized engineering skillset.
           </p>
         </div>
@@ -535,7 +534,7 @@ export default function LandingPage() {
             <h2 className="font-sora text-3xl font-bold text-white sm:text-4xl">
               Latest Featured Roles
             </h2>
-            <p className="mt-2 text-sm text-[#a8b0cc]">
+            <p className="mt-2 text-sm text-text-desc">
               Hand-picked opportunities updated in real-time from top hiring partners.
             </p>
           </div>
@@ -547,7 +546,7 @@ export default function LandingPage() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 cursor-pointer ${activeTab === tab
-                    ? 'bg-gradient-to-r from-cyan-400 to-indigo-400 text-[#0b0f1e] shadow-[0_0_15px_rgba(34,211,238,0.3)] scale-[1.02]'
+                    ? 'bg-gradient-to-r from-cyan-400 to-indigo-400 text-brand-bg shadow-[0_0_15px_rgba(34,211,238,0.3)] scale-[1.02]'
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                   }`}
               >
@@ -578,7 +577,7 @@ export default function LandingPage() {
           <h2 className="font-sora text-3xl font-bold text-white sm:text-4xl">
             How JobBoard Works
           </h2>
-          <p className="mt-3 text-sm text-[#a8b0cc] sm:text-base">
+          <p className="mt-3 text-sm text-text-desc sm:text-base">
             From registration to job offer in four simple steps.
           </p>
         </div>
@@ -594,7 +593,7 @@ export default function LandingPage() {
               </span>
               <div className="mt-2 text-3xl transition duration-300 group-hover:scale-125">{s.icon}</div>
               <h3 className="mt-3 font-sora text-lg font-bold text-white group-hover:text-cyan-300 transition">{s.title}</h3>
-              <p className="mt-2 text-xs leading-relaxed text-[#9aa3c2]">{s.desc}</p>
+              <p className="mt-2 text-xs leading-relaxed text-text-secondary">{s.desc}</p>
             </div>
           ))}
         </div>
@@ -607,7 +606,7 @@ export default function LandingPage() {
             <h2 className="font-sora text-3xl font-bold text-white sm:text-4xl">
               Loved by Candidates & Employers
             </h2>
-            <p className="mt-2 text-sm text-[#a8b0cc]">
+            <p className="mt-2 text-sm text-text-desc">
               Hear from software engineers and companies hiring through our platform.
             </p>
           </div>
@@ -622,7 +621,7 @@ export default function LandingPage() {
                   <span className="text-3xl transition duration-300 group-hover:scale-125">{t.avatar}</span>
                   <div>
                     <h4 className="font-sora text-sm font-bold text-white">{t.name}</h4>
-                    <p className="text-xs text-[#9aa3c2]">{t.role}</p>
+                    <p className="text-xs text-text-secondary">{t.role}</p>
                   </div>
                 </div>
                 <p className="text-xs leading-relaxed text-slate-300 italic">
@@ -636,13 +635,13 @@ export default function LandingPage() {
 
       {/* CTA Section Banner */}
       <section id="companies" className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-8">
-        <div className="relative overflow-hidden rounded-3xl border border-white/14 bg-gradient-to-r from-cyan-900/40 via-indigo-900/30 to-[#0b0f1e] p-10 text-center backdrop-blur-2xl sm:p-16 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition hover:border-cyan-400/40">
+        <div className="relative overflow-hidden rounded-3xl border border-white/14 bg-gradient-to-r from-cyan-900/40 via-indigo-900/30 to-brand-bg p-10 text-center backdrop-blur-2xl sm:p-16 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition hover:border-cyan-400/40">
           <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl animate-pulse-glow" />
 
           <h2 className="font-sora text-3xl font-extrabold text-white sm:text-4xl lg:text-5xl">
             Ready to Take the Next Step in Your Career?
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#a8b0cc] sm:text-base">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-text-desc sm:text-base">
             Create your account today to apply for top software engineer, UI designer, and product manager roles.
           </p>
 
@@ -667,14 +666,14 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/10 bg-[#070a14] py-12 text-xs text-slate-400">
+      <footer className="relative z-10 border-t border-white/10 bg-brand-footer py-12 text-xs text-slate-400">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Link to="/" className="font-sora text-lg font-bold text-white">
                 JobBoard
               </Link>
-              <p className="mt-3 text-xs leading-relaxed text-[#9aa3c2]">
+              <p className="mt-3 text-xs leading-relaxed text-text-secondary">
                 Precision career matching platform connecting top engineering talent with leading tech companies.
               </p>
             </div>
@@ -699,7 +698,7 @@ export default function LandingPage() {
 
             <div>
               <h4 className="font-sora font-semibold text-white mb-3">Platform</h4>
-              <p className="text-xs text-[#9aa3c2] mb-3">
+              <p className="text-xs text-text-secondary mb-3">
                 Built with React, Tailwind CSS, & Django REST Framework.
               </p>
               <p className="text-[0.7rem] text-slate-500">
@@ -714,7 +713,7 @@ export default function LandingPage() {
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 text-lg font-bold text-[#0b0f1e] shadow-[0_0_20px_rgba(34,211,238,0.5)] transition duration-200 hover:scale-110 active:scale-95 cursor-pointer animate-fade-in-up"
+          className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 text-lg font-bold text-brand-bg shadow-[0_0_20px_rgba(34,211,238,0.5)] transition duration-200 hover:scale-110 active:scale-95 cursor-pointer animate-fade-in-up"
           title="Scroll to Top"
         >
           ↑

@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { BriefcaseIcon } from '@/assets/icons'
+import colors from '@/styles/colors'
 import Button from '../../components/common/Button'
 import JobCard from '../../components/jobs/JobCard'
 import JobDetailModal from '../../components/jobs/JobDetailModal'
@@ -10,7 +12,7 @@ import * as companiesApi from '../../api/companiesApi'
 
 const LOGO_BG_PALETTE = [
   'from-cyan-400 to-blue-500',
-  'from-[#818cf8] to-purple-600',
+  `from-[${colors.gradient.accentFrom}] to-purple-600`,
   'from-emerald-400 to-teal-600',
   'from-amber-400 to-orange-500',
   'from-pink-500 to-rose-600',
@@ -207,7 +209,7 @@ export default function JobsList() {
   const userDisplayName = user?.name || user?.email?.split('@')[0] || 'there'
 
   return (
-    <div className="relative min-h-screen bg-[#0b0f1e] text-slate-100 font-sans selection:bg-cyan-500 selection:text-slate-900 overflow-hidden">
+    <div className="relative min-h-screen bg-brand-bg text-slate-100 font-sans selection:bg-cyan-500 selection:text-slate-900 overflow-hidden">
       {/* Background Animated Glow Orbs */}
       <div className="pointer-events-none fixed -top-40 -left-40 h-[550px] w-[550px] rounded-full bg-cyan-500/15 blur-[130px] animate-pulse-glow" />
       <div
@@ -220,7 +222,7 @@ export default function JobsList() {
       />
 
       {/* Sticky Header Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#0b0f1e]/85 backdrop-blur-xl transition-all duration-300">
+      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-brand-bg/85 backdrop-blur-xl transition-all duration-300">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
           {/* Logo */}
           <Link
@@ -228,22 +230,7 @@ export default function JobsList() {
             className="flex items-center gap-2.5 font-sora text-xl font-extrabold text-white group"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 shadow-[0_0_18px_rgba(34,211,238,0.5)] transition duration-300 group-hover:scale-110">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <rect
-                  x="3"
-                  y="7"
-                  width="18"
-                  height="13"
-                  rx="2"
-                  stroke="#0b0f1e"
-                  strokeWidth="2.5"
-                />
-                <path
-                  d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                  stroke="#0b0f1e"
-                  strokeWidth="2.5"
-                />
-              </svg>
+              <BriefcaseIcon width="20" height="20" stroke={colors.background.main} strokeWidth="2.5" />
             </div>
             <span className="bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent group-hover:to-indigo-300 transition">
               JobBoard
@@ -269,7 +256,7 @@ export default function JobsList() {
           {/* User Info & Logout Button */}
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 backdrop-blur-md">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-[0.7rem] font-bold text-[#0b0f1e]">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500 text-[0.7rem] font-bold text-brand-bg">
                 {(user?.name || user?.email || 'U')[0].toUpperCase()}
               </div>
               <span className="text-xs font-semibold text-slate-200">
@@ -301,7 +288,7 @@ export default function JobsList() {
             </span>
           </h1>
 
-          <p className="max-w-2xl text-sm leading-relaxed text-[#a8b0cc] sm:text-base">
+          <p className="max-w-2xl text-sm leading-relaxed text-text-desc sm:text-base">
             Explore active openings, filter by location or contract type, and connect directly with hiring teams.
           </p>
         </div>
@@ -327,7 +314,7 @@ export default function JobsList() {
               <select
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
-                className="w-full bg-transparent text-sm text-white outline-none cursor-pointer [&>option]:bg-[#0b0f1e]"
+                className="w-full bg-transparent text-sm text-white outline-none cursor-pointer [&>option]:bg-brand-bg"
               >
                 {distinctLocations.map((loc) => (
                   <option key={loc} value={loc}>
@@ -378,7 +365,7 @@ export default function JobsList() {
               Available Opportunities
             </h2>
             {!loading && !error && (
-              <p className="mt-1 text-xs text-[#a8b0cc] sm:text-sm">
+              <p className="mt-1 text-xs text-text-desc sm:text-sm">
                 Showing {filteredJobs.length}{' '}
                 {filteredJobs.length === 1 ? 'role' : 'roles'} matching your criteria
               </p>
@@ -393,7 +380,7 @@ export default function JobsList() {
                 onClick={() => setActiveTab(tab)}
                 className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 cursor-pointer ${
                   activeTab === tab
-                    ? 'bg-gradient-to-r from-cyan-400 to-indigo-400 text-[#0b0f1e] shadow-[0_0_15px_rgba(34,211,238,0.3)] scale-[1.02]'
+                    ? 'bg-gradient-to-r from-cyan-400 to-indigo-400 text-brand-bg shadow-[0_0_15px_rgba(34,211,238,0.3)] scale-[1.02]'
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -454,7 +441,7 @@ export default function JobsList() {
             <h3 className="mt-4 font-sora text-lg font-bold text-white">
               No Jobs Found
             </h3>
-            <p className="mt-2 text-xs text-[#9aa3c2]">
+            <p className="mt-2 text-xs text-text-secondary">
               No jobs match your current search query or active filters. Try clearing filters.
             </p>
             <div className="mt-6">
@@ -475,14 +462,14 @@ export default function JobsList() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/10 bg-[#070a14] py-12 text-xs text-slate-400">
+      <footer className="relative z-10 border-t border-white/10 bg-brand-footer py-12 text-xs text-slate-400">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Link to="/" className="font-sora text-lg font-bold text-white">
                 JobBoard
               </Link>
-              <p className="mt-3 text-xs leading-relaxed text-[#9aa3c2]">
+              <p className="mt-3 text-xs leading-relaxed text-text-secondary">
                 Precision career matching platform connecting top engineering talent with leading tech companies.
               </p>
             </div>
@@ -522,7 +509,7 @@ export default function JobsList() {
 
             <div>
               <h4 className="font-sora font-semibold text-white mb-3">Platform</h4>
-              <p className="text-xs text-[#9aa3c2] mb-3">
+              <p className="text-xs text-text-secondary mb-3">
                 Connected to Django REST Framework backend API.
               </p>
               <p className="text-[0.7rem] text-slate-500">
@@ -537,7 +524,7 @@ export default function JobsList() {
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 text-lg font-bold text-[#0b0f1e] shadow-[0_0_20px_rgba(34,211,238,0.5)] transition duration-200 hover:scale-110 active:scale-95 cursor-pointer animate-fade-in-up"
+          className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 text-lg font-bold text-brand-bg shadow-[0_0_20px_rgba(34,211,238,0.5)] transition duration-200 hover:scale-110 active:scale-95 cursor-pointer animate-fade-in-up"
           title="Scroll to Top"
         >
           ↑
