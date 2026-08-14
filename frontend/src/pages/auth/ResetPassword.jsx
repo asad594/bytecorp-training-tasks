@@ -3,8 +3,8 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import AuthLayout from '../../components/common/AuthLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
-// Wired custom hook (useForm)
 import useForm from '../../hooks/useForm'
+import * as authApi from '../../api/authApi'
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()
@@ -12,7 +12,6 @@ export default function ResetPassword() {
   const uid = searchParams.get('uid') || ''
   const token = searchParams.get('token') || ''
 
-  // Keep non-form UI state as local useState
   const [showPassword, setShowPassword] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -21,7 +20,6 @@ export default function ResetPassword() {
     confirmPassword: '',
   }
 
-  // Wired useForm custom hook for form values, errors, and submission handling
   const { form, errors, loading, handleChange, handleSubmit } = useForm(
     initialValues,
     async (values, { setErrors }) => {
@@ -35,10 +33,30 @@ export default function ResetPassword() {
         return
       }
 
-      // Simulate API call to POST /accounts/password/reset/
-      console.log('Resetting password with payload:', { uid, token, new_password: values.newPassword })
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      setSuccess(true)
+      if (!uid || !token) {
+        setErrors({ general: 'Invalid password reset link. Please request a new link.' })
+        return
+      }
+
+      try {
+        await authApi.resetPassword({
+          uid,
+          token,
+          new_password: values.newPassword,
+        })
+        setSuccess(true)
+      } catch (err) {
+        let msg = 'Failed to reset password. The link may be invalid or expired.'
+        if (err.response?.data) {
+          const d = err.response.data
+          if (typeof d === 'string') msg = d
+          else if (typeof d.detail === 'string') msg = d.detail
+          else if (d.new_password) msg = Array.isArray(d.new_password) ? d.new_password.join(' ') : d.new_password
+          else if (d.non_field_errors) msg = Array.isArray(d.non_field_errors) ? d.non_field_errors.join(' ') : d.non_field_errors
+          else if (d.error?.message) msg = d.error.message
+        }
+        setErrors({ general: msg })
+      }
     }
   )
 
@@ -78,7 +96,6 @@ export default function ResetPassword() {
               </div>
             )}
 
-            {/* New Password with field-specific error from useForm */}
             <div className="relative">
               <Input
                 label="New Password"
@@ -100,7 +117,6 @@ export default function ResetPassword() {
               </button>
             </div>
 
-            {/* Confirm Password with field-specific error from useForm */}
             <Input
               label="Confirm New Password"
               type={showPassword ? 'text' : 'password'}

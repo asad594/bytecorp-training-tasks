@@ -9,10 +9,11 @@ import useBookmarks from '../../hooks/useBookmarks'
 import useAuth from '../../hooks/useAuth'
 import * as jobsApi from '../../api/jobsApi'
 import * as companiesApi from '../../api/companiesApi'
+import * as applicationsApi from '../../api/applicationsApi'
 
 const LOGO_BG_PALETTE = [
   'from-cyan-400 to-blue-500',
-  `from-[${colors.gradient.accentFrom}] to-purple-600`,
+  'from-indigo-400 to-purple-600',
   'from-emerald-400 to-teal-600',
   'from-amber-400 to-orange-500',
   'from-pink-500 to-rose-600',
@@ -54,6 +55,7 @@ export default function JobsList() {
   const { user, logout } = useAuth()
   const { toggleBookmark, isBookmarked } = useBookmarks()
 
+  // TODO(react-query): Hand-rolled loading/error/fetch state is a candidate for TanStack Query migration.
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -64,6 +66,8 @@ export default function JobsList() {
   const [selectedJobModal, setSelectedJobModal] = useState(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [appliedSuccess, setAppliedSuccess] = useState(false)
+  const [submittingApp, setSubmittingApp] = useState(false)
+  const [submitAppError, setSubmitAppError] = useState(null)
 
   const submitTimerRef = useRef(null)
 
@@ -162,22 +166,46 @@ export default function JobsList() {
     e.stopPropagation()
     setSelectedJobModal(job)
     setAppliedSuccess(false)
+    setSubmitAppError(null)
   }
 
   const handleCloseModal = () => {
     if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
     setSelectedJobModal(null)
     setAppliedSuccess(false)
+    setSubmitAppError(null)
   }
 
-  const submitApplication = (e) => {
-    e.preventDefault()
-    setAppliedSuccess(true)
-    if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
-    submitTimerRef.current = setTimeout(() => {
-      setSelectedJobModal(null)
-      setAppliedSuccess(false)
-    }, 1500)
+  const submitApplication = async (e, coverLetter) => {
+    if (e && e.preventDefault) e.preventDefault()
+    if (!selectedJobModal) return
+
+    setSubmittingApp(true)
+    setSubmitAppError(null)
+
+    try {
+      const jobId = selectedJobModal.id || selectedJobModal.job_id
+      await applicationsApi.applyForJob(jobId, coverLetter || '')
+      setAppliedSuccess(true)
+      if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
+      submitTimerRef.current = setTimeout(() => {
+        setSelectedJobModal(null)
+        setAppliedSuccess(false)
+      }, 2000)
+    } catch (err) {
+      let msg = 'Failed to submit application. Please try again.'
+      if (err.response?.data) {
+        const d = err.response.data
+        if (typeof d === 'string') msg = d
+        else if (typeof d.detail === 'string') msg = d.detail
+        else if (d.error?.message) msg = d.error.message
+        else if (Array.isArray(d.non_field_errors)) msg = d.non_field_errors.join(' ')
+        else if (d.cover_letter) msg = Array.isArray(d.cover_letter) ? d.cover_letter.join(' ') : d.cover_letter
+      }
+      setSubmitAppError(msg)
+    } finally {
+      setSubmittingApp(false)
+    }
   }
 
   // Derive distinct locations from fetched jobs for dropdown
@@ -537,6 +565,8 @@ export default function JobsList() {
         onClose={handleCloseModal}
         onSubmitApplication={submitApplication}
         appliedSuccess={appliedSuccess}
+        isSubmitting={submittingApp}
+        submitError={submitAppError}
       />
     </div>
   )

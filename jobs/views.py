@@ -12,7 +12,11 @@ class JobListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        jobs = Job.objects.filter(deleted_at__isnull=True)
+        company_id = request.query_params.get('company')
+        if company_id:
+            jobs = Job.objects.filter(company_id=company_id, deleted_at__isnull=True)
+        else:
+            jobs = Job.objects.filter(deleted_at__isnull=True)
         serializer = JobSerializer(jobs, many=True)
         return Response(serializer.data)
 
