@@ -22,7 +22,7 @@ export default function JobCard({
             <h3 className="font-sora text-base font-bold text-white group-hover:text-cyan-300 transition">
               {job.title}
             </h3>
-            <p className="text-xs text-[#9aa3c2]">
+            <p className="text-xs text-text-secondary">
               {job.company} · {job.location}
             </p>
           </div>
@@ -41,7 +41,7 @@ export default function JobCard({
 
       {/* Description */}
       {job.description && (
-        <p className="text-xs text-[#a0a9c8] line-clamp-2 mb-4 leading-relaxed">
+        <p className="text-xs text-text-card line-clamp-2 mb-4 leading-relaxed">
           {job.description}
         </p>
       )}
@@ -63,7 +63,7 @@ export default function JobCard({
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-white/10 pt-4">
         <div>
-          <span className="font-sora font-bold text-[#67e8f9] text-sm">
+          <span className="font-sora font-bold text-cyan-accent text-sm">
             {job.salary}
           </span>
           {job.posted && (
@@ -75,7 +75,7 @@ export default function JobCard({
 
         <button
           onClick={(e) => onQuickApply(e, job)}
-          className="rounded-xl bg-cyan-400/10 border border-cyan-400/30 px-3.5 py-1.5 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-400 hover:text-[#0b0f1e] hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] cursor-pointer"
+          className="rounded-xl bg-cyan-400/10 border border-cyan-400/30 px-3.5 py-1.5 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-400 hover:text-brand-bg hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] cursor-pointer"
         >
           Quick Apply
         </button>

@@ -3,6 +3,20 @@
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-sora: "Sora", system-ui, sans-serif;
+  --color-brand-bg: #0b0f1e;
+  --color-brand-dark: #05070d;
+  --color-brand-footer: #070a14;
+  --color-brand-card: #0e1428;
+  --color-brand-cyan: #22d3ee;
+  --color-brand-indigo: #6366f1;
+  --color-cyan-accent: #67e8f9;
+  --color-body-text: #e6e9f5;
+  --color-text-secondary: #9aa3c2;
+  --color-text-desc: #a8b0cc;
+  --color-text-sub: #99a2c2;
+  --color-text-card: #a0a9c8;
+  --color-text-divider: #6b7394;
+  --color-tag-text: #d3d8ee;
 }
 
 /* Floating animation */

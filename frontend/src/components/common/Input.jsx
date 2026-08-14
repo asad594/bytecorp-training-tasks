@@ -15,7 +15,7 @@ export default function Input({
   return (
     <div className={`flex flex-col gap-1.5 w-full ${containerClassName}`}>
       {label && (
-        <label className="text-xs font-semibold text-[#a8b0cc] flex items-center justify-between">
+        <label className="text-xs font-semibold text-text-desc flex items-center justify-between">
           <span>
             {label}
             {required && <span className="ml-1 text-cyan-400">*</span>}
