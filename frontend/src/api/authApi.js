@@ -8,6 +8,27 @@ export const login = async (role, { email, password }) => {
   return response.data
 }
 
+export const register = async (role, userData) => {
+  const response = await axiosInstance.post(`/accounts/register/${role}/`, userData)
+  return response.data
+}
+
+export const forgotPassword = async (email) => {
+  const response = await axiosInstance.post('/accounts/password/forgot/', {
+    email,
+  })
+  return response.data
+}
+
+export const resetPassword = async ({ uid, token, new_password }) => {
+  const response = await axiosInstance.post('/accounts/password/reset/', {
+    uid,
+    token,
+    new_password,
+  })
+  return response.data
+}
+
 export const getProfile = async (token) => {
   const config = token
     ? {

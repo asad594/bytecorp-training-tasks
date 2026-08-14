@@ -87,20 +87,25 @@ export default function Login() {
         let errorMessage = 'Login failed. Please check your email and password.'
         if (!err.response) {
           errorMessage =
-            'Unable to connect to the backend server. Please ensure the Django server is running on http://localhost:8000'
+            'Unable to connect to the backend server. Please ensure the Django server is running.'
         } else if (err.response?.data) {
           const d = err.response.data
-          if (typeof d.detail === 'string') {
+          if (d.error) {
+            if (typeof d.error.message === 'string') errorMessage = d.error.message
+            if (d.error.details && typeof d.error.details === 'object') {
+              const fieldMsgs = []
+              for (const [field, msgs] of Object.entries(d.error.details)) {
+                const text = Array.isArray(msgs) ? msgs.join(' ') : String(msgs)
+                fieldMsgs.push(`${field}: ${text}`)
+              }
+              if (fieldMsgs.length > 0) errorMessage = fieldMsgs.join(' | ')
+            }
+          } else if (typeof d.detail === 'string') {
             errorMessage = d.detail
           } else if (typeof d.message === 'string') {
             errorMessage = d.message
           } else if (Array.isArray(d.non_field_errors)) {
             errorMessage = d.non_field_errors.join(' ')
-          } else if (typeof d === 'object') {
-            const firstKey = Object.keys(d)[0]
-            if (firstKey && Array.isArray(d[firstKey])) {
-              errorMessage = `${firstKey}: ${d[firstKey].join(' ')}`
-            }
           }
         }
         setErrors({ general: errorMessage })

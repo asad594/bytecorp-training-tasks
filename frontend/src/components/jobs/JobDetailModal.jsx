@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import Button from '../common/Button'
 
 export default function JobDetailModal({
@@ -6,7 +7,11 @@ export default function JobDetailModal({
   onClose,
   onSubmitApplication,
   appliedSuccess,
+  isSubmitting = false,
+  submitError = null,
 }) {
+  const [coverLetter, setCoverLetter] = useState('')
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && onClose) {
@@ -18,6 +23,15 @@ export default function JobDetailModal({
   }, [onClose])
 
   if (!job) return null
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (onSubmitApplication) {
+      onSubmitApplication(e, coverLetter)
+    }
+  }
+
+  const jobId = job.id || job.job_id
 
   return (
     <div
@@ -45,16 +59,18 @@ export default function JobDetailModal({
             <span className="text-5xl">🎉</span>
             <h3 className="mt-4 font-sora text-xl font-bold text-white">Application Received!</h3>
             <p className="mt-2 text-xs text-slate-300">
-              Redirecting you to complete your profile sign in...
+              Your application has been successfully submitted to the employer.
             </p>
           </div>
         ) : (
           <>
             <div className="flex items-center gap-3.5 mb-4">
               <div
-                className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${job.logoBg} font-sora font-bold text-white text-xl shadow-lg`}
+                className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${
+                  job.logoBg || 'from-cyan-400 to-indigo-500'
+                } font-sora font-bold text-white text-xl shadow-lg`}
               >
-                {job.logoLetter}
+                {job.logoLetter || (job.title ? job.title.charAt(0) : 'J')}
               </div>
               <div>
                 <h3 id="job-modal-title" className="font-sora text-lg font-bold text-white">
@@ -64,33 +80,64 @@ export default function JobDetailModal({
               </div>
             </div>
 
+            {submitError && (
+              <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+                {submitError}
+              </div>
+            )}
+
             <div className="mb-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs">
-              <p className="text-slate-300">{job.description}</p>
+              <p className="text-slate-300 line-clamp-3">{job.description}</p>
             </div>
 
-            <div className="mb-4">
-              <h4 className="text-xs font-semibold text-cyan-300 uppercase tracking-wide mb-2">Key Requirements:</h4>
-              <ul className="space-y-1 text-xs text-slate-300 list-disc list-inside">
-                {job.requirements.map((req, idx) => (
-                  <li key={idx}>{req}</li>
-                ))}
-              </ul>
-            </div>
+            {job.requirements && job.requirements.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-xs font-semibold text-cyan-300 uppercase tracking-wide mb-2">Key Requirements:</h4>
+                <ul className="space-y-1 text-xs text-slate-300 list-disc list-inside">
+                  {job.requirements.map((req, idx) => (
+                    <li key={idx}>{req}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-            <div className="flex items-center justify-between border-t border-white/10 pt-4 mb-6">
+            <div className="flex items-center justify-between border-t border-white/10 pt-4 mb-4">
               <span className="font-sora font-bold text-cyan-accent text-base">{job.salary}</span>
               <span className="text-xs text-slate-400">{job.posted}</span>
             </div>
 
-            <form onSubmit={onSubmitApplication} className="space-y-3">
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                className="w-full btn-gradient-shimmer"
-              >
-                Submit Quick Application →
-              </Button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-text-desc mb-1.5">
+                  Cover Letter <span className="text-slate-500 font-normal">(Optional, min 10 chars if provided)</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={coverLetter}
+                  onChange={(e) => setCoverLetter(e.target.value)}
+                  placeholder="Introduce yourself or share why you're a great fit for this role..."
+                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3 pt-2">
+                <Link
+                  to={`/jobs/${jobId}`}
+                  onClick={onClose}
+                  className="text-xs font-semibold text-cyan-accent hover:underline flex items-center gap-1"
+                >
+                  View Full Details →
+                </Link>
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  isLoading={isSubmitting}
+                >
+                  Submit Application →
+                </Button>
+              </div>
             </form>
           </>
         )}
