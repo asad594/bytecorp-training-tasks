@@ -66,7 +66,7 @@ class JobSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['job_id', 'created_at', 'updated_at']
+        read_only_fields = ['job_id', 'company', 'created_at', 'updated_at']
 
     def validate(self, data):
         salary_min = data.get('salary_min')
