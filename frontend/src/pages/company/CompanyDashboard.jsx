@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BriefcaseIcon, SpinnerIcon } from '@/assets/icons'
+import { BriefcaseIcon } from '@/assets/icons'
 import colors from '@/styles/colors'
 import Button from '../../components/common/Button'
 import Badge from '../../components/common/Badge'
@@ -26,7 +26,6 @@ export default function CompanyDashboard() {
     joinCompany,
     createJob,
     updateJobStatus,
-    deleteJob,
     updateApplicationStatus,
   } = useCompanyDashboard()
 

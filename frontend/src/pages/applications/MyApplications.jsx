@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BriefcaseIcon } from '@/assets/icons'
 import colors from '@/styles/colors'
@@ -6,102 +6,32 @@ import Button from '../../components/common/Button'
 import Badge from '../../components/common/Badge'
 import { getApplicationStatusVariant } from '../../utils/statusVariants'
 import useAuth from '../../hooks/useAuth'
-import * as applicationsApi from '../../api/applicationsApi'
-import * as jobsApi from '../../api/jobsApi'
-import * as companiesApi from '../../api/companiesApi'
-
-function formatRelativeTime(dateString) {
-  if (!dateString) return 'Recently'
-  const date = new Date(dateString)
-  if (isNaN(date.getTime())) return 'Recently'
-
-  const now = new Date()
-  const diffMs = now - date
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffHours / 24)
-
-  if (diffHours < 1) return 'Just now'
-  if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`
-  if (diffDays < 30) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`
-  return 'Recently'
-}
+import {
+  useEnrichedMyApplicationsQuery,
+  useWithdrawApplicationMutation,
+} from '../../queries/useApplicationsQueries'
+import { formatRelativeTime } from '../../utils/formatters'
 
 export default function MyApplications() {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
 
-  // TODO(react-query): Hand-rolled loading/error/fetch state is a candidate for TanStack Query migration.
-  const [applications, setApplications] = useState([])
-  const [enrichedApps, setEnrichedApps] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const {
+    data: enrichedApps = [],
+    isLoading: loading,
+    error: queryError,
+    refetch: fetchApplicationsData,
+  } = useEnrichedMyApplicationsQuery()
+
+  const error = queryError
+    ? queryError.response?.data?.detail ||
+      queryError.message ||
+      'Failed to load applications. Please try again.'
+    : null
+
+  const withdrawMutation = useWithdrawApplicationMutation()
   const [activeTab, setActiveTab] = useState('All')
   const [withdrawingId, setWithdrawingId] = useState(null)
-
-  const fetchApplicationsData = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const rawApps = await applicationsApi.getMyApplications()
-      setApplications(rawApps || [])
-
-      if (!rawApps || rawApps.length === 0) {
-        setEnrichedApps([])
-        return
-      }
-
-      // Unique job IDs to fetch
-      const uniqueJobIds = [...new Set(rawApps.map((a) => a.job).filter(Boolean))]
-      const jobsMap = {}
-      const companyMap = {}
-
-      await Promise.all(
-        uniqueJobIds.map(async (jId) => {
-          try {
-            const jobData = await jobsApi.getJob(jId)
-            jobsMap[jId] = jobData
-            if (jobData?.company && !companyMap[jobData.company]) {
-              try {
-                const compData = await companiesApi.getCompany(jobData.company)
-                companyMap[jobData.company] = compData?.name || 'Company'
-              } catch {
-                companyMap[jobData.company] = 'Company'
-              }
-            }
-          } catch {
-            jobsMap[jId] = { title: 'Applied Job', location: 'Remote' }
-          }
-        })
-      )
-
-      const enriched = rawApps.map((app) => {
-        const job = jobsMap[app.job] || {}
-        const companyName = companyMap[job.company] || 'Company'
-        return {
-          ...app,
-          jobTitle: job.title || 'Applied Job',
-          companyName,
-          location: job.location || 'Remote',
-          employmentType: job.employment_type || 'Full-time',
-        }
-      })
-
-      setEnrichedApps(enriched)
-    } catch (err) {
-      console.error('Error loading applications:', err)
-      setError(
-        err.response?.data?.detail ||
-          err.message ||
-          'Failed to load applications. Please try again.'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchApplicationsData()
-  }, [])
 
   const handleLogout = () => {
     logout()
@@ -114,8 +44,7 @@ export default function MyApplications() {
     }
     setWithdrawingId(applicationId)
     try {
-      await applicationsApi.withdrawApplication(applicationId)
-      setEnrichedApps((prev) => prev.filter((a) => a.application_id !== applicationId))
+      await withdrawMutation.mutateAsync(applicationId)
     } catch (err) {
       alert(err.response?.data?.detail || 'Failed to withdraw application.')
     } finally {
