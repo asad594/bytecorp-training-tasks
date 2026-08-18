@@ -7,6 +7,7 @@ import Input from '../../components/common/Input'
 // Wired custom hooks (useForm)
 import useForm from '../../hooks/useForm'
 import useGoogleAuth from '../../hooks/useGoogleAuth'
+import * as authApi from '../../api/authApi'
 
 const roleConfig = {
   job_seeker: {
@@ -16,7 +17,6 @@ const roleConfig = {
       'Create your profile to apply for top software engineering, design, and product roles in one click.',
     subtitle: 'Create your Job Seeker account',
     loginHref: '/login/job_seeker',
-    showCompanyField: false,
     showSocial: true,
   },
   company_rep: {
@@ -26,7 +26,6 @@ const roleConfig = {
       'Set up your company hiring profile, post open roles, and track applications seamlessly.',
     subtitle: 'Create your Employer account',
     loginHref: '/login/company_rep',
-    showCompanyField: true,
     showSocial: false,
   },
 }
@@ -44,7 +43,6 @@ export default function Register() {
   const initialValues = {
     firstName: '',
     lastName: '',
-    companyName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -65,9 +63,40 @@ export default function Register() {
         return
       }
 
-      // Simulate API request delay
-      await new Promise((resolve) => setTimeout(resolve, 600))
-      navigate(`/login/${currentRole}`)
+      try {
+        const fullName = `${values.firstName || ''} ${values.lastName || ''}`.trim() || values.email.split('@')[0]
+        await authApi.register(currentRole, {
+          name: fullName,
+          email: values.email,
+          password: values.password,
+        })
+        navigate(`/login/${currentRole}`, {
+          state: { message: 'Account created successfully! Please sign in.' }
+        })
+      } catch (err) {
+        let errorMessage = 'Registration failed. Please try again.'
+        const data = err.response?.data
+        if (data) {
+          if (data.error) {
+            const errorObj = data.error
+            if (errorObj.details && typeof errorObj.details === 'object') {
+              const fieldMsgs = []
+              for (const [field, msgs] of Object.entries(errorObj.details)) {
+                const text = Array.isArray(msgs) ? msgs.join(' ') : String(msgs)
+                fieldMsgs.push(`${field}: ${text}`)
+              }
+              if (fieldMsgs.length > 0) errorMessage = fieldMsgs.join(' | ')
+            } else if (typeof errorObj.message === 'string') {
+              errorMessage = errorObj.message
+            }
+          } else if (typeof data.detail === 'string') {
+            errorMessage = data.detail
+          } else if (typeof data.message === 'string') {
+            errorMessage = data.message
+          }
+        }
+        setErrors({ general: errorMessage })
+      }
     }
   )
 
@@ -142,20 +171,6 @@ export default function Register() {
               placeholder="Morgan"
             />
           </div>
-
-          {/* Optional Company Name for Company Rep */}
-          {config.showCompanyField && (
-            <Input
-              label="Company Name"
-              type="text"
-              name="companyName"
-              required
-              value={form.companyName || ''}
-              onChange={handleChange}
-              error={errors.companyName}
-              placeholder="Acme Tech Inc."
-            />
-          )}
 
           {/* Email with field-specific error from useForm */}
           <Input

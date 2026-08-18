@@ -3,21 +3,30 @@ import { Link } from 'react-router-dom'
 import AuthLayout from '../../components/common/AuthLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
-// Wired custom hook (useForm)
 import useForm from '../../hooks/useForm'
+import * as authApi from '../../api/authApi'
 
 export default function ForgotPassword() {
-  // Keep success message as local state
   const [message, setMessage] = useState('')
 
-  // Wired useForm custom hook for form values, errors, and submit handling
   const { form, errors, loading, handleChange, handleSubmit } = useForm(
     { email: '' },
-    async (_values) => {
+    async (values, { setErrors }) => {
       setMessage('')
-      // Simulate API call to POST /accounts/password/forgot/
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      setMessage('If an account with that email exists, a password reset link has been sent to your email.')
+      try {
+        const res = await authApi.forgotPassword(values.email)
+        setMessage(res.message || 'If an account with that email exists, a password reset link has been sent.')
+      } catch (err) {
+        let msg = 'Failed to request password reset. Please try again.'
+        if (err.response?.data) {
+          const d = err.response.data
+          if (typeof d === 'string') msg = d
+          else if (typeof d.detail === 'string') msg = d.detail
+          else if (d.email) msg = Array.isArray(d.email) ? d.email.join(' ') : d.email
+          else if (d.error?.message) msg = d.error.message
+        }
+        setErrors({ general: msg })
+      }
     }
   )
 

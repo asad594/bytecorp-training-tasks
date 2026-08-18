@@ -7,6 +7,23 @@ from companies.models import Company, CompanyMember
 from companies.serializers import CompanySerializer
 
 
+class MyCompanyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role not in ['company_rep', 'admin']:
+            raise PermissionDenied('Only company representatives and admins can access company details.')
+
+        membership = CompanyMember.objects.filter(user=request.user).select_related('company').first()
+        if not membership or not membership.company or membership.company.deleted_at is not None:
+            return Response({'company': None, 'message': 'No company linked to this account.'}, status=200)
+
+        serializer = CompanySerializer(membership.company)
+        data = serializer.data
+        data['role'] = membership.role
+        return Response({'company': data}, status=200)
+
+
 class CompanyListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
