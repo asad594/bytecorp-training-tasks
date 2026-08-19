@@ -7,142 +7,40 @@ import JobCard from '../../components/jobs/JobCard'
 import JobDetailModal from '../../components/jobs/JobDetailModal'
 import useBookmarks from '../../hooks/useBookmarks'
 import useAuth from '../../hooks/useAuth'
-import * as jobsApi from '../../api/jobsApi'
-import * as companiesApi from '../../api/companiesApi'
-import * as applicationsApi from '../../api/applicationsApi'
-
-const LOGO_BG_PALETTE = [
-  'from-cyan-400 to-blue-500',
-  'from-indigo-400 to-purple-600',
-  'from-emerald-400 to-teal-600',
-  'from-amber-400 to-orange-500',
-  'from-pink-500 to-rose-600',
-  'from-cyan-500 to-teal-400',
-  'from-indigo-500 to-cyan-500',
-  'from-red-500 to-purple-600',
-]
-
-function formatRelativeTime(dateString) {
-  if (!dateString) return 'Recently'
-  const date = new Date(dateString)
-  if (isNaN(date.getTime())) return 'Recently'
-
-  const now = new Date()
-  const diffMs = now - date
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffHours / 24)
-
-  if (diffHours < 1) return 'Just now'
-  if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`
-  if (diffDays < 30) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`
-  return 'Recently'
-}
-
-function formatSalary(min, max) {
-  if (min && max) {
-    const minK = (min / 1000).toFixed(0)
-    const maxK = (max / 1000).toFixed(0)
-    return `$${minK}k - $${maxK}k`
-  }
-  if (min) {
-    return `$${(min / 1000).toFixed(0)}k+`
-  }
-  return 'Competitive'
-}
+import { useEnrichedJobsQuery } from '../../queries/useJobsQueries'
+import { useApplyForJobMutation } from '../../queries/useApplicationsQueries'
 
 export default function JobsList() {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { toggleBookmark, isBookmarked } = useBookmarks()
 
-  // TODO(react-query): Hand-rolled loading/error/fetch state is a candidate for TanStack Query migration.
-  const [jobs, setJobs] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const {
+    data: jobs = [],
+    isLoading: loading,
+    error: queryError,
+    refetch: fetchJobsAndCompanies,
+  } = useEnrichedJobsQuery()
 
+  const error = queryError
+    ? queryError.response?.data?.detail ||
+      queryError.message ||
+      'Failed to load job listings. Please check your connection and try again.'
+    : null
+
+  const applyMutation = useApplyForJobMutation()
   const [searchQuery, setSearchQuery] = useState('')
   const [locationFilter, setLocationFilter] = useState('All Locations')
   const [activeTab, setActiveTab] = useState('All')
   const [selectedJobModal, setSelectedJobModal] = useState(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [appliedSuccess, setAppliedSuccess] = useState(false)
-  const [submittingApp, setSubmittingApp] = useState(false)
   const [submitAppError, setSubmitAppError] = useState(null)
+  const submittingApp = applyMutation.isPending
 
   const submitTimerRef = useRef(null)
 
-  const fetchJobsAndCompanies = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const rawJobs = await jobsApi.getJobs()
-
-      // Extract unique company IDs to deduplicate requests
-      const uniqueCompanyIds = [
-        ...new Set((rawJobs || []).map((j) => j.company).filter(Boolean)),
-      ]
-
-      // Fetch all needed companies in parallel
-      const companyMap = {}
-      await Promise.all(
-        uniqueCompanyIds.map(async (id) => {
-          try {
-            const companyData = await companiesApi.getCompany(id)
-            companyMap[id] = companyData?.name || 'Company'
-          } catch {
-            companyMap[id] = 'Company'
-          }
-        })
-      )
-
-      // Transform raw backend jobs into frontend shape
-      const transformedJobs = (rawJobs || []).map((job) => {
-        const companyName = companyMap[job.company] || 'Company'
-        const rawType = (job.employment_type || '').toLowerCase()
-
-        let displayType = 'Full-time'
-        if (rawType === 'part-time') displayType = 'Part-time'
-        else if (rawType === 'contract') displayType = 'Contract'
-        else if (rawType === 'full-time') displayType = 'Full-time'
-        else if (job.employment_type) displayType = job.employment_type
-
-        const logoBg =
-          LOGO_BG_PALETTE[(job.job_id || 0) % LOGO_BG_PALETTE.length]
-        const logoLetter = (companyName[0] || 'C').toUpperCase()
-
-        return {
-          id: job.job_id,
-          title: job.title || 'Untitled Role',
-          company: companyName,
-          location: job.location || 'Remote',
-          description: job.description || '',
-          salary: formatSalary(job.salary_min, job.salary_max),
-          posted: formatRelativeTime(job.created_at),
-          type: displayType,
-          rawType: rawType,
-          tags: [displayType, job.location].filter(Boolean),
-          requirements: [],
-          logoLetter,
-          logoBg,
-        }
-      })
-
-      setJobs(transformedJobs)
-    } catch (err) {
-      console.error('Failed to fetch jobs:', err)
-      setError(
-        err.response?.data?.detail ||
-          err.message ||
-          'Failed to load job listings. Please check your connection and try again.'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchJobsAndCompanies()
-
     const handleScroll = () => {
       if (window.scrollY > 300) {
         setShowScrollTop(true)
@@ -180,12 +78,11 @@ export default function JobsList() {
     if (e && e.preventDefault) e.preventDefault()
     if (!selectedJobModal) return
 
-    setSubmittingApp(true)
     setSubmitAppError(null)
 
     try {
       const jobId = selectedJobModal.id || selectedJobModal.job_id
-      await applicationsApi.applyForJob(jobId, coverLetter || '')
+      await applyMutation.mutateAsync({ jobId, coverLetter: coverLetter || '' })
       setAppliedSuccess(true)
       if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
       submitTimerRef.current = setTimeout(() => {
@@ -203,8 +100,6 @@ export default function JobsList() {
         else if (d.cover_letter) msg = Array.isArray(d.cover_letter) ? d.cover_letter.join(' ') : d.cover_letter
       }
       setSubmitAppError(msg)
-    } finally {
-      setSubmittingApp(false)
     }
   }
 

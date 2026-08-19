@@ -1,58 +1,48 @@
-import { useState, useEffect, useCallback } from 'react'
-import * as companiesApi from '../api/companiesApi'
-import * as jobsApi from '../api/jobsApi'
-import * as applicationsApi from '../api/applicationsApi'
+import {
+  useCompanyDashboardDataQuery,
+  useCreateCompanyMutation,
+  useJoinCompanyMutation,
+} from '../queries/useCompaniesQueries'
+import {
+  useCreateJobMutation,
+  useUpdateJobMutation,
+  useDeleteJobMutation,
+} from '../queries/useJobsQueries'
+import { useUpdateApplicationStatusMutation } from '../queries/useApplicationsQueries'
 
 export default function useCompanyDashboard() {
-  // TODO(react-query): Hand-rolled loading/error/fetch state is a candidate for TanStack Query migration.
-  const [company, setCompany] = useState(null)
-  const [jobs, setJobs] = useState([])
-  const [applications, setApplications] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [actionLoading, setActionLoading] = useState(false)
+  const {
+    data,
+    isLoading,
+    error: queryError,
+    refetch,
+  } = useCompanyDashboardDataQuery()
 
-  const fetchDashboardData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const companyRes = await companiesApi.getMyCompany()
-      const myCompany = companyRes.company
+  const company = data?.company || null
+  const jobs = data?.jobs || []
+  const applications = data?.applications || []
+  const loading = isLoading
+  const error = queryError
+    ? queryError.response?.data?.detail ||
+      queryError.response?.data?.message ||
+      'Failed to load company dashboard data. Please try again.'
+    : null
 
-      if (myCompany && myCompany.company_id) {
-        setCompany(myCompany)
-        const [jobsRes, appsRes] = await Promise.all([
-          jobsApi.getCompanyJobs(myCompany.company_id),
-          applicationsApi.getCompanyApplications(),
-        ])
-        setJobs(jobsRes || [])
-        setApplications(appsRes || [])
-      } else {
-        setCompany(null)
-        setJobs([])
-        setApplications([])
-      }
-    } catch (err) {
-      console.error('Error loading company dashboard data:', err)
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data?.message ||
-          'Failed to load company dashboard data. Please try again.'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const createCompanyMutation = useCreateCompanyMutation()
+  const joinCompanyMutation = useJoinCompanyMutation()
+  const createJobMutation = useCreateJobMutation()
+  const updateJobMutation = useUpdateJobMutation()
+  const deleteJobMutation = useDeleteJobMutation()
+  const updateApplicationStatusMutation = useUpdateApplicationStatusMutation()
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [fetchDashboardData])
+  const actionLoading =
+    createCompanyMutation.isPending ||
+    joinCompanyMutation.isPending ||
+    createJobMutation.isPending
 
   const createCompany = async (companyData) => {
-    setActionLoading(true)
     try {
-      const res = await companiesApi.createCompany(companyData)
-      await fetchDashboardData()
+      const res = await createCompanyMutation.mutateAsync(companyData)
       return { success: true, message: res.message }
     } catch (err) {
       const errMsg =
@@ -61,16 +51,12 @@ export default function useCompanyDashboard() {
         err.response?.data?.detail ||
         'Failed to register company.'
       return { success: false, error: errMsg }
-    } finally {
-      setActionLoading(false)
     }
   }
 
   const joinCompany = async (registrationNumber) => {
-    setActionLoading(true)
     try {
-      const res = await companiesApi.joinCompany(registrationNumber)
-      await fetchDashboardData()
+      const res = await joinCompanyMutation.mutateAsync(registrationNumber)
       return { success: true, message: res.message }
     } catch (err) {
       const errMsg =
@@ -78,20 +64,16 @@ export default function useCompanyDashboard() {
         err.response?.data?.detail ||
         'Failed to join company.'
       return { success: false, error: errMsg }
-    } finally {
-      setActionLoading(false)
     }
   }
 
   const createJob = async (jobData) => {
     if (!company) return { success: false, error: 'No company associated.' }
-    setActionLoading(true)
     try {
-      const newJob = await jobsApi.createJob({
+      const newJob = await createJobMutation.mutateAsync({
         ...jobData,
         company: company.company_id,
       })
-      setJobs((prev) => [newJob, ...prev])
       return { success: true, job: newJob }
     } catch (err) {
       const errMsg =
@@ -100,17 +82,15 @@ export default function useCompanyDashboard() {
         err.response?.data?.salary_max?.[0] ||
         'Failed to create job.'
       return { success: false, error: errMsg }
-    } finally {
-      setActionLoading(false)
     }
   }
 
   const updateJobStatus = async (jobId, newStatus) => {
     try {
-      const updated = await jobsApi.updateJob(jobId, { status: newStatus })
-      setJobs((prev) =>
-        prev.map((j) => (j.job_id === jobId ? { ...j, status: newStatus } : j))
-      )
+      const updated = await updateJobMutation.mutateAsync({
+        id: jobId,
+        data: { status: newStatus },
+      })
       return { success: true, job: updated }
     } catch (err) {
       return {
@@ -122,8 +102,7 @@ export default function useCompanyDashboard() {
 
   const deleteJob = async (jobId) => {
     try {
-      await jobsApi.deleteJob(jobId)
-      setJobs((prev) => prev.filter((j) => j.job_id !== jobId))
+      await deleteJobMutation.mutateAsync(jobId)
       return { success: true }
     } catch (err) {
       return {
@@ -135,22 +114,16 @@ export default function useCompanyDashboard() {
 
   const updateApplicationStatus = async (applicationId, newStatus) => {
     try {
-      const updated = await applicationsApi.updateApplicationStatus(
+      const updated = await updateApplicationStatusMutation.mutateAsync({
         applicationId,
-        newStatus
-      )
-      setApplications((prev) =>
-        prev.map((app) =>
-          app.application_id === applicationId
-            ? { ...app, status: newStatus }
-            : app
-        )
-      )
+        status: newStatus,
+      })
       return { success: true, application: updated }
     } catch (err) {
       return {
         success: false,
-        error: err.response?.data?.detail || 'Failed to update applicant status.',
+        error:
+          err.response?.data?.detail || 'Failed to update applicant status.',
       }
     }
   }
@@ -159,7 +132,9 @@ export default function useCompanyDashboard() {
   const totalJobs = jobs.length
   const activeJobs = jobs.filter((j) => j.status === 'open').length
   const totalApplicants = applications.length
-  const pendingApplicants = applications.filter((a) => a.status === 'pending').length
+  const pendingApplicants = applications.filter(
+    (a) => a.status === 'pending'
+  ).length
 
   return {
     company,
@@ -174,7 +149,7 @@ export default function useCompanyDashboard() {
       totalApplicants,
       pendingApplicants,
     },
-    refetch: fetchDashboardData,
+    refetch,
     createCompany,
     joinCompany,
     createJob,

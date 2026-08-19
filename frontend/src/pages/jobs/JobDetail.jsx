@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { BriefcaseIcon } from '@/assets/icons'
 import colors from '@/styles/colors'
@@ -6,86 +6,37 @@ import Button from '../../components/common/Button'
 import Badge from '../../components/common/Badge'
 import JobDetailModal from '../../components/jobs/JobDetailModal'
 import useAuth from '../../hooks/useAuth'
-import * as jobsApi from '../../api/jobsApi'
-import * as companiesApi from '../../api/companiesApi'
-import * as applicationsApi from '../../api/applicationsApi'
-
-function formatRelativeTime(dateString) {
-  if (!dateString) return 'Recently'
-  const date = new Date(dateString)
-  if (isNaN(date.getTime())) return 'Recently'
-
-  const now = new Date()
-  const diffMs = now - date
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffHours / 24)
-
-  if (diffHours < 1) return 'Just now'
-  if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`
-  if (diffDays < 30) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`
-  return 'Recently'
-}
-
-function formatSalary(min, max) {
-  if (min && max) {
-    const minK = (min / 1000).toFixed(0)
-    const maxK = (max / 1000).toFixed(0)
-    return `$${minK}k - $${maxK}k`
-  }
-  if (min) {
-    return `$${(min / 1000).toFixed(0)}k+`
-  }
-  return 'Competitive'
-}
+import { useEnrichedJobDetailQuery } from '../../queries/useJobsQueries'
+import { useApplyForJobMutation } from '../../queries/useApplicationsQueries'
+import { formatRelativeTime, formatSalary } from '../../utils/formatters'
 
 export default function JobDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
 
-  // TODO(react-query): Hand-rolled loading/error/fetch state is a candidate for TanStack Query migration.
-  const [job, setJob] = useState(null)
-  const [company, setCompany] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+    refetch: fetchJobDetails,
+  } = useEnrichedJobDetailQuery(id)
 
+  const job = data?.job || null
+  const company = data?.company || null
+  const error = queryError
+    ? queryError.response?.status === 404
+      ? 'Job not found or has been removed.'
+      : queryError.response?.data?.detail ||
+        queryError.message ||
+        'Failed to load job details.'
+    : null
+
+  const applyMutation = useApplyForJobMutation()
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
   const [appliedSuccess, setAppliedSuccess] = useState(false)
-  const [submittingApp, setSubmittingApp] = useState(false)
   const [submitAppError, setSubmitAppError] = useState(null)
-
-  const fetchJobDetails = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const jobData = await jobsApi.getJob(id)
-      setJob(jobData)
-
-      if (jobData?.company) {
-        try {
-          const compData = await companiesApi.getCompany(jobData.company)
-          setCompany(compData)
-        } catch {
-          setCompany({ name: 'Company' })
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching job details:', err)
-      if (err.response?.status === 404) {
-        setError('Job not found or has been removed.')
-      } else {
-        setError(err.response?.data?.detail || err.message || 'Failed to load job details.')
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (id) {
-      fetchJobDetails()
-    }
-  }, [id])
+  const submittingApp = applyMutation.isPending
 
   const handleLogout = () => {
     logout()
@@ -96,11 +47,13 @@ export default function JobDetail() {
     if (e && e.preventDefault) e.preventDefault()
     if (!job) return
 
-    setSubmittingApp(true)
     setSubmitAppError(null)
 
     try {
-      await applicationsApi.applyForJob(job.job_id || job.id, coverLetter || '')
+      await applyMutation.mutateAsync({
+        jobId: job.job_id || job.id,
+        coverLetter: coverLetter || '',
+      })
       setAppliedSuccess(true)
       setTimeout(() => {
         setIsApplyModalOpen(false)
@@ -117,8 +70,6 @@ export default function JobDetail() {
         else if (d.cover_letter) msg = Array.isArray(d.cover_letter) ? d.cover_letter.join(' ') : d.cover_letter
       }
       setSubmitAppError(msg)
-    } finally {
-      setSubmittingApp(false)
     }
   }
 

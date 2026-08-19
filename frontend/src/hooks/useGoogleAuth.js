@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuth from './useAuth'
 import * as authApi from '../api/authApi'
@@ -16,39 +16,42 @@ export default function useGoogleAuth() {
     setHiddenButtonNode(node)
   }
 
-  const handleCredentialResponse = async (response) => {
-    if (!response || !response.credential) return
+  const handleCredentialResponse = useCallback(
+    async (response) => {
+      if (!response || !response.credential) return
 
-    try {
-      setLoading(true)
-      setError(null)
-      const result = await authApi.googleLogin(response.credential)
-      login(result.user, result.access)
-      navigate('/jobs')
-    } catch (err) {
-      let message = 'Google Sign-In failed. Please try again or log in with email.'
-      if (!err.response) {
-        message = 'Unable to connect to the backend server. Please ensure Django is running.'
-      } else if (err.response?.data) {
-        const d = err.response.data
-        if (typeof d.detail === 'string') {
-          message = d.detail
-        } else if (typeof d.message === 'string') {
-          message = d.message
-        } else if (Array.isArray(d.non_field_errors)) {
-          message = d.non_field_errors.join(' ')
-        } else if (typeof d === 'object') {
-          const firstKey = Object.keys(d)[0]
-          if (firstKey && Array.isArray(d[firstKey])) {
-            message = `${firstKey}: ${d[firstKey].join(' ')}`
+      try {
+        setLoading(true)
+        setError(null)
+        const result = await authApi.googleLogin(response.credential)
+        login(result.user, result.access)
+        navigate('/jobs')
+      } catch (err) {
+        let message = 'Google Sign-In failed. Please try again or log in with email.'
+        if (!err.response) {
+          message = 'Unable to connect to the backend server. Please ensure Django is running.'
+        } else if (err.response?.data) {
+          const d = err.response.data
+          if (typeof d.detail === 'string') {
+            message = d.detail
+          } else if (typeof d.message === 'string') {
+            message = d.message
+          } else if (Array.isArray(d.non_field_errors)) {
+            message = d.non_field_errors.join(' ')
+          } else if (typeof d === 'object') {
+            const firstKey = Object.keys(d)[0]
+            if (firstKey && Array.isArray(d[firstKey])) {
+              message = `${firstKey}: ${d[firstKey].join(' ')}`
+            }
           }
         }
+        setError(message)
+      } finally {
+        setLoading(false)
       }
-      setError(message)
-    } finally {
-      setLoading(false)
-    }
-  }
+    },
+    [login, navigate]
+  )
 
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
@@ -78,7 +81,7 @@ export default function useGoogleAuth() {
     return () => {
       if (intervalId) clearInterval(intervalId)
     }
-  }, [])
+  }, [handleCredentialResponse])
 
   useEffect(() => {
     if (hiddenButtonNode && window.google?.accounts?.id && googleReady) {
