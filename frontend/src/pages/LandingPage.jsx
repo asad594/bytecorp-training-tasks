@@ -186,10 +186,9 @@ export default function LandingPage() {
     }
   }, [])
 
-  const handleQuickApply = (e, job) => {
+  const handleQuickApply = (e) => {
     e.stopPropagation()
-    setSelectedJobModal(job)
-    setAppliedSuccess(false)
+    navigate('/login/job_seeker')
   }
 
   const handleCloseModal = () => {
