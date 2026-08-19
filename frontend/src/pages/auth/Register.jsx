@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useFormik } from 'formik'
 import { SpinnerIcon, GoogleIcon } from '@/assets/icons'
 import AuthLayout from '../../components/common/AuthLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
-// Wired custom hooks (useForm)
-import useForm from '../../hooks/useForm'
 import useGoogleAuth from '../../hooks/useGoogleAuth'
 import * as authApi from '../../api/authApi'
+import registerSchema from '../../schemas/registerSchema'
+import { parseApiError } from '../../utils/apiError'
 
 const roleConfig = {
   job_seeker: {
@@ -39,6 +40,7 @@ export default function Register() {
 
   // Keep non-form UI state as local useState
   const [showPassword, setShowPassword] = useState(false)
+  const [generalError, setGeneralError] = useState('')
 
   const initialValues = {
     firstName: '',
@@ -49,20 +51,12 @@ export default function Register() {
     agreeTerms: false,
   }
 
-  // Wired useForm custom hook for form state, validation errors, and submit handling
-  const { form, errors, loading, handleChange, handleSubmit } = useForm(
+  // Formik form handling with Yup validation schema
+  const formik = useFormik({
     initialValues,
-    async (values, { setErrors }) => {
-      if (values.password !== values.confirmPassword) {
-        setErrors({ confirmPassword: 'Passwords do not match.' })
-        return
-      }
-
-      if (!values.agreeTerms) {
-        setErrors({ general: 'You must agree to the Terms of Service to create an account.' })
-        return
-      }
-
+    validationSchema: registerSchema,
+    onSubmit: async (values, { setErrors }) => {
+      setGeneralError('')
       try {
         const fullName = `${values.firstName || ''} ${values.lastName || ''}`.trim() || values.email.split('@')[0]
         await authApi.register(currentRole, {
@@ -71,34 +65,19 @@ export default function Register() {
           password: values.password,
         })
         navigate(`/login/${currentRole}`, {
-          state: { message: 'Account created successfully! Please sign in.' }
+          state: { message: 'Account created successfully! Please sign in.' },
         })
       } catch (err) {
-        let errorMessage = 'Registration failed. Please try again.'
-        const data = err.response?.data
-        if (data) {
-          if (data.error) {
-            const errorObj = data.error
-            if (errorObj.details && typeof errorObj.details === 'object') {
-              const fieldMsgs = []
-              for (const [field, msgs] of Object.entries(errorObj.details)) {
-                const text = Array.isArray(msgs) ? msgs.join(' ') : String(msgs)
-                fieldMsgs.push(`${field}: ${text}`)
-              }
-              if (fieldMsgs.length > 0) errorMessage = fieldMsgs.join(' | ')
-            } else if (typeof errorObj.message === 'string') {
-              errorMessage = errorObj.message
-            }
-          } else if (typeof data.detail === 'string') {
-            errorMessage = data.detail
-          } else if (typeof data.message === 'string') {
-            errorMessage = data.message
-          }
+        const { general, fieldErrors } = parseApiError(err)
+        if (general) {
+          setGeneralError(general)
         }
-        setErrors({ general: errorMessage })
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors)
+        }
       }
-    }
-  )
+    },
+  })
 
   return (
     <AuthLayout
@@ -141,23 +120,27 @@ export default function Register() {
         <p className="text-xs text-text-sub mb-6">{config.subtitle}</p>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {(errors.general || googleError) && (
+        <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
+          {(generalError || formik.errors.general || formik.errors.agreeTerms || googleError) && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
-              {errors.general || googleError}
+              {generalError || formik.errors.general || formik.errors.agreeTerms || googleError}
             </div>
           )}
 
-          {/* Name Row with field-specific errors from useForm */}
+          {/* Name Row with field-specific errors from Formik */}
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="First Name"
               type="text"
               name="firstName"
               required
-              value={form.firstName || ''}
-              onChange={handleChange}
-              error={errors.firstName}
+              value={formik.values.firstName || ''}
+              onChange={(e) => {
+                if (generalError) setGeneralError('')
+                formik.handleChange(e)
+              }}
+              onBlur={formik.handleBlur}
+              error={formik.touched.firstName && formik.errors.firstName}
               placeholder="Alex"
             />
             <Input
@@ -165,35 +148,47 @@ export default function Register() {
               type="text"
               name="lastName"
               required
-              value={form.lastName || ''}
-              onChange={handleChange}
-              error={errors.lastName}
+              value={formik.values.lastName || ''}
+              onChange={(e) => {
+                if (generalError) setGeneralError('')
+                formik.handleChange(e)
+              }}
+              onBlur={formik.handleBlur}
+              error={formik.touched.lastName && formik.errors.lastName}
               placeholder="Morgan"
             />
           </div>
 
-          {/* Email with field-specific error from useForm */}
+          {/* Email with field-specific error from Formik */}
           <Input
             label="Email Address"
             type="email"
             name="email"
             required
-            value={form.email || ''}
-            onChange={handleChange}
-            error={errors.email}
+            value={formik.values.email || ''}
+            onChange={(e) => {
+              if (generalError) setGeneralError('')
+              formik.handleChange(e)
+            }}
+            onBlur={formik.handleBlur}
+            error={formik.touched.email && formik.errors.email}
             placeholder="you@domain.com"
           />
 
-          {/* Password with field-specific error from useForm */}
+          {/* Password with field-specific error from Formik */}
           <div className="relative">
             <Input
               label="Password"
               type={showPassword ? 'text' : 'password'}
               name="password"
               required
-              value={form.password || ''}
-              onChange={handleChange}
-              error={errors.password}
+              value={formik.values.password || ''}
+              onChange={(e) => {
+                if (generalError) setGeneralError('')
+                formik.handleChange(e)
+              }}
+              onBlur={formik.handleBlur}
+              error={formik.touched.password && formik.errors.password}
               placeholder="Minimum 8 characters"
             />
             <button
@@ -205,15 +200,19 @@ export default function Register() {
             </button>
           </div>
 
-          {/* Confirm Password with field-specific error from useForm */}
+          {/* Confirm Password with field-specific error from Formik */}
           <Input
             label="Confirm Password"
             type={showPassword ? 'text' : 'password'}
             name="confirmPassword"
             required
-            value={form.confirmPassword || ''}
-            onChange={handleChange}
-            error={errors.confirmPassword}
+            value={formik.values.confirmPassword || ''}
+            onChange={(e) => {
+              if (generalError) setGeneralError('')
+              formik.handleChange(e)
+            }}
+            onBlur={formik.handleBlur}
+            error={formik.touched.confirmPassword && formik.errors.confirmPassword}
             placeholder="Re-enter your password"
           />
 
@@ -223,8 +222,11 @@ export default function Register() {
               <input
                 type="checkbox"
                 name="agreeTerms"
-                checked={form.agreeTerms || false}
-                onChange={handleChange}
+                checked={formik.values.agreeTerms || false}
+                onChange={(e) => {
+                  if (generalError) setGeneralError('')
+                  formik.handleChange(e)
+                }}
                 className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 accent-cyan-400"
               />
               <span>
@@ -233,10 +235,10 @@ export default function Register() {
             </label>
           </div>
 
-          {/* Submit Button using useForm loading state */}
+          {/* Submit Button using Formik isSubmitting state */}
           <Button
             type="submit"
-            isLoading={loading}
+            isLoading={formik.isSubmitting}
             variant="primary"
             size="lg"
             className="mt-2 w-full btn-gradient-shimmer"
