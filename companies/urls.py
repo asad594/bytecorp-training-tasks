@@ -1,9 +1,19 @@
 from django.urls import path
-from companies.views import CompanyListCreateView, CompanyDetailView, CompanyJoinView, MyCompanyView
+from companies.views import (
+    CompanyListCreateView,
+    CompanyDetailView,
+    CompanyJoinView,
+    MyCompanyView,
+    CompanyPendingListView,
+    CompanyVerifyView,
+)
+from config.endpoints import CompanyEndpoints as EP
 
 urlpatterns = [
-    path('', CompanyListCreateView.as_view(), name='company-list-create'),
-    path('me/', MyCompanyView.as_view(), name='my-company'),
-    path('join/', CompanyJoinView.as_view(), name='company-join'),
-    path('<int:pk>/', CompanyDetailView.as_view(), name='company-detail'),
+    path(EP.LIST_CREATE, CompanyListCreateView.as_view(), name='company-list-create'),
+    path(EP.MY_COMPANY, MyCompanyView.as_view(), name='my-company'),
+    path(EP.JOIN, CompanyJoinView.as_view(), name='company-join'),
+    path(EP.PENDING, CompanyPendingListView.as_view(), name='company-pending-list'),
+    path(EP.VERIFY, CompanyVerifyView.as_view(), name='company-verify'),
+    path(EP.DETAIL, CompanyDetailView.as_view(), name='company-detail'),
 ]
