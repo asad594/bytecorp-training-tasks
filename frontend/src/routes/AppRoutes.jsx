@@ -9,6 +9,7 @@ import ProtectedRoute from './ProtectedRoute'
 
 // Page Imports for Protected Routes
 import CompanyDashboard from '../pages/company/CompanyDashboard'
+import AdminCompanies from '../pages/admin/AdminCompanies'
 import JobsList from '../pages/jobs/JobsList'
 import JobDetail from '../pages/jobs/JobDetail'
 import MyApplications from '../pages/applications/MyApplications'
@@ -30,11 +31,24 @@ export default function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute allowedRoles={['company_rep', 'admin']}>
+          <ProtectedRoute allowedRoles={['company_rep']}>
             <CompanyDashboard />
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/companies"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminCompanies />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={<Navigate to="/admin/companies" replace />}
+      />
+
       <Route
         path="/jobs"
         element={

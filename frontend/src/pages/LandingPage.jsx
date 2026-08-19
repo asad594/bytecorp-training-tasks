@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BriefcaseIcon } from '@/assets/icons'
 import colors from '@/styles/colors'
@@ -8,6 +8,7 @@ import CategoryCard from '../components/landing/CategoryCard'
 import JobCard from '../components/jobs/JobCard'
 import JobDetailModal from '../components/jobs/JobDetailModal'
 import useBookmarks from '../hooks/useBookmarks'
+import useAuth from '../hooks/useAuth'
 
 const sampleCategories = [
   { id: 'frontend', name: 'Frontend & UI', count: 430, icon: '💻', avgSalary: 'PKR 150k-280k' },
@@ -161,15 +162,13 @@ const testimonials = [
 
 export default function LandingPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [locationFilter, setLocationFilter] = useState('All Locations')
   const [activeTab, setActiveTab] = useState('All')
   const { bookmarks: bookmarkedJobs, toggleBookmark } = useBookmarks()
   const [selectedJobModal, setSelectedJobModal] = useState(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
-  const [appliedSuccess, setAppliedSuccess] = useState(false)
-
-  const submitTimerRef = useRef(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -182,29 +181,38 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll)
     return () => {
       window.removeEventListener('scroll', handleScroll)
-      if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
     }
   }, [])
 
   const handleQuickApply = (e) => {
     e.stopPropagation()
-    navigate('/login/job_seeker')
+    if (user) {
+      if (user.role === 'job_seeker') {
+        navigate('/jobs')
+      } else {
+        navigate('/dashboard')
+      }
+    } else {
+      navigate('/login/job_seeker')
+    }
   }
 
   const handleCloseModal = () => {
-    if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
     setSelectedJobModal(null)
   }
 
   const submitApplication = (e) => {
     e.preventDefault()
-    setAppliedSuccess(true)
-    if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
-    submitTimerRef.current = setTimeout(() => {
-      setSelectedJobModal(null)
-      setAppliedSuccess(false)
+    setSelectedJobModal(null)
+    if (user) {
+      if (user.role === 'job_seeker') {
+        navigate('/jobs')
+      } else {
+        navigate('/dashboard')
+      }
+    } else {
       navigate('/login/job_seeker')
-    }, 1500)
+    }
   }
 
   const filteredJobs = sampleFeaturedJobs.filter((job) => {
@@ -724,7 +732,7 @@ export default function LandingPage() {
         job={selectedJobModal}
         onClose={handleCloseModal}
         onSubmitApplication={submitApplication}
-        appliedSuccess={appliedSuccess}
+        appliedSuccess={false}
       />
     </div>
   )
