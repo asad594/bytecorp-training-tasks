@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BriefcaseIcon, SpinnerIcon } from '@/assets/icons'
+import { useFormik } from 'formik'
+import { BriefcaseIcon } from '@/assets/icons'
 import colors from '@/styles/colors'
 import Button from '../../components/common/Button'
 import Badge from '../../components/common/Badge'
@@ -9,6 +10,9 @@ import AnimatedCounter from '../../components/common/AnimatedCounter'
 import ApplicantCard from '../../components/company/ApplicantCard'
 import useAuth from '../../hooks/useAuth'
 import useCompanyDashboard from '../../hooks/useCompanyDashboard'
+import jobPostSchema from '../../schemas/jobPostSchema'
+import companyCreateSchema from '../../schemas/companyCreateSchema'
+import companyJoinSchema from '../../schemas/companyJoinSchema'
 
 export default function CompanyDashboard() {
   const navigate = useNavigate()
@@ -26,7 +30,6 @@ export default function CompanyDashboard() {
     joinCompany,
     createJob,
     updateJobStatus,
-    deleteJob,
     updateApplicationStatus,
   } = useCompanyDashboard()
 
@@ -39,31 +42,75 @@ export default function CompanyDashboard() {
   const [isJoinCompanyModalOpen, setIsJoinCompanyModalOpen] = useState(false)
   const [applicantFilterStatus, setApplicantFilterStatus] = useState('All')
 
-  // Post Job Form State
-  const [jobForm, setJobForm] = useState({
-    title: '',
-    employment_type: 'full-time',
-    location: '',
-    salary_min: 150000,
-    salary_max: 250000,
-    description: '',
-    status: 'open',
-  })
-  const [jobFormErrors, setJobFormErrors] = useState({})
+  // Formik: Post Job Form
+  const postJobFormik = useFormik({
+    initialValues: {
+      title: '',
+      employment_type: 'full-time',
+      location: '',
+      salary_min: 150000,
+      salary_max: 250000,
+      description: '',
+      status: 'open',
+    },
+    validationSchema: jobPostSchema,
+    onSubmit: async (values, { resetForm, setErrors }) => {
+      const res = await createJob({
+        title: values.title,
+        employment_type: values.employment_type,
+        location: values.location || 'Remote',
+        salary_min: Number(values.salary_min),
+        salary_max: Number(values.salary_max),
+        description: values.description,
+        status: values.status,
+      })
 
-  // Register Company Form State
-  const [companyForm, setCompanyForm] = useState({
-    name: '',
-    registration_number: '',
-    description: '',
-    website: '',
-    location: '',
+      if (res.success) {
+        setIsPostJobModalOpen(false)
+        resetForm()
+      } else {
+        setErrors({ general: res.error })
+      }
+    },
   })
-  const [companyFormErrors, setCompanyFormErrors] = useState({})
 
-  // Join Company Form State
-  const [joinRegNumber, setJoinRegNumber] = useState('')
-  const [joinFormErrors, setJoinFormErrors] = useState({})
+  // Formik: Register Company Form
+  const companyCreateFormik = useFormik({
+    initialValues: {
+      name: '',
+      registration_number: '',
+      description: '',
+      website: '',
+      location: '',
+    },
+    validationSchema: companyCreateSchema,
+    onSubmit: async (values, { resetForm, setErrors }) => {
+      const res = await createCompany(values)
+      if (res.success) {
+        setIsRegisterCompanyModalOpen(false)
+        resetForm()
+      } else {
+        setErrors({ general: res.error })
+      }
+    },
+  })
+
+  // Formik: Join Company Form
+  const companyJoinFormik = useFormik({
+    initialValues: {
+      registration_number: '',
+    },
+    validationSchema: companyJoinSchema,
+    onSubmit: async (values, { resetForm, setErrors }) => {
+      const res = await joinCompany(values.registration_number.trim())
+      if (res.success) {
+        setIsJoinCompanyModalOpen(false)
+        resetForm()
+      } else {
+        setErrors({ general: res.error })
+      }
+    },
+  })
 
   const userDisplayName = user?.name || user?.email?.split('@')[0] || 'Employer'
 
@@ -83,94 +130,6 @@ export default function CompanyDashboard() {
     if (applicantFilterStatus === 'All') return true
     return app.status.toLowerCase() === applicantFilterStatus.toLowerCase()
   })
-
-  // Handle Post Job Submit
-  const handlePostJobSubmit = async (e) => {
-    e.preventDefault()
-    setJobFormErrors({})
-
-    const errors = {}
-    if (!jobForm.title || jobForm.title.length < 5) {
-      errors.title = 'Title must be at least 5 characters long.'
-    }
-    if (!jobForm.description || jobForm.description.length < 20) {
-      errors.description = 'Description must be at least 20 characters long.'
-    }
-    if (Number(jobForm.salary_max) < Number(jobForm.salary_min)) {
-      errors.salary_max = 'Maximum salary cannot be less than minimum salary.'
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setJobFormErrors(errors)
-      return
-    }
-
-    const res = await createJob({
-      title: jobForm.title,
-      employment_type: jobForm.employment_type,
-      location: jobForm.location || 'Remote',
-      salary_min: Number(jobForm.salary_min),
-      salary_max: Number(jobForm.salary_max),
-      description: jobForm.description,
-      status: jobForm.status,
-    })
-
-    if (res.success) {
-      setIsPostJobModalOpen(false)
-      setJobForm({
-        title: '',
-        employment_type: 'full-time',
-        location: '',
-        salary_min: 150000,
-        salary_max: 250000,
-        description: '',
-        status: 'open',
-      })
-    } else {
-      setJobFormErrors({ general: res.error })
-    }
-  }
-
-  // Handle Create Company Submit
-  const handleCreateCompanySubmit = async (e) => {
-    e.preventDefault()
-    setCompanyFormErrors({})
-
-    if (!companyForm.name || companyForm.name.length < 2) {
-      setCompanyFormErrors({ name: 'Company name must be at least 2 characters.' })
-      return
-    }
-    if (!companyForm.registration_number) {
-      setCompanyFormErrors({ registration_number: 'Registration number is required.' })
-      return
-    }
-
-    const res = await createCompany(companyForm)
-    if (res.success) {
-      setIsRegisterCompanyModalOpen(false)
-    } else {
-      setCompanyFormErrors({ general: res.error })
-    }
-  }
-
-  // Handle Join Company Submit
-  const handleJoinCompanySubmit = async (e) => {
-    e.preventDefault()
-    setJoinFormErrors({})
-
-    if (!joinRegNumber.trim()) {
-      setJoinFormErrors({ registration_number: 'Registration number is required.' })
-      return
-    }
-
-    const res = await joinCompany(joinRegNumber.trim())
-    if (res.success) {
-      setIsJoinCompanyModalOpen(false)
-      setJoinRegNumber('')
-    } else {
-      setJoinFormErrors({ general: res.error })
-    }
-  }
 
   return (
     <div className="relative min-h-screen bg-brand-bg text-slate-100 font-sans selection:bg-cyan-500 selection:text-slate-900 overflow-hidden">
@@ -555,27 +514,31 @@ export default function CompanyDashboard() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-sora text-xl font-bold text-white">Post New Job Opening</h3>
               <button
-                onClick={() => setIsPostJobModalOpen(false)}
+                onClick={() => {
+                  setIsPostJobModalOpen(false)
+                  postJobFormik.resetForm()
+                }}
                 className="text-slate-400 hover:text-white text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {jobFormErrors.general && (
+            {postJobFormik.errors.general && (
               <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-                {jobFormErrors.general}
+                {postJobFormik.errors.general}
               </div>
             )}
 
-            <form onSubmit={handlePostJobSubmit} className="flex flex-col gap-4">
+            <form onSubmit={postJobFormik.handleSubmit} className="flex flex-col gap-4">
               <Input
                 label="Job Title"
                 name="title"
                 required
-                value={jobForm.title}
-                onChange={(e) => setJobForm({ ...jobForm, title: e.target.value })}
-                error={jobFormErrors.title}
+                value={postJobFormik.values.title}
+                onChange={postJobFormik.handleChange}
+                onBlur={postJobFormik.handleBlur}
+                error={postJobFormik.touched.title && postJobFormik.errors.title}
                 placeholder="e.g. Senior Backend Engineer"
               />
 
@@ -585,8 +548,9 @@ export default function CompanyDashboard() {
                     Employment Type
                   </label>
                   <select
-                    value={jobForm.employment_type}
-                    onChange={(e) => setJobForm({ ...jobForm, employment_type: e.target.value })}
+                    name="employment_type"
+                    value={postJobFormik.values.employment_type}
+                    onChange={postJobFormik.handleChange}
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-xs text-white outline-none focus:border-cyan-400 [&>option]:bg-brand-bg"
                   >
                     <option value="full-time">Full-time</option>
@@ -598,8 +562,9 @@ export default function CompanyDashboard() {
                 <Input
                   label="Location"
                   name="location"
-                  value={jobForm.location}
-                  onChange={(e) => setJobForm({ ...jobForm, location: e.target.value })}
+                  value={postJobFormik.values.location}
+                  onChange={postJobFormik.handleChange}
+                  onBlur={postJobFormik.handleBlur}
                   placeholder="e.g. Remote / Karachi"
                 />
               </div>
@@ -609,16 +574,18 @@ export default function CompanyDashboard() {
                   label="Salary Min (PKR)"
                   type="number"
                   name="salary_min"
-                  value={jobForm.salary_min}
-                  onChange={(e) => setJobForm({ ...jobForm, salary_min: e.target.value })}
+                  value={postJobFormik.values.salary_min}
+                  onChange={postJobFormik.handleChange}
+                  onBlur={postJobFormik.handleBlur}
                 />
                 <Input
                   label="Salary Max (PKR)"
                   type="number"
                   name="salary_max"
-                  value={jobForm.salary_max}
-                  onChange={(e) => setJobForm({ ...jobForm, salary_max: e.target.value })}
-                  error={jobFormErrors.salary_max}
+                  value={postJobFormik.values.salary_max}
+                  onChange={postJobFormik.handleChange}
+                  onBlur={postJobFormik.handleBlur}
+                  error={postJobFormik.touched.salary_max && postJobFormik.errors.salary_max}
                 />
               </div>
 
@@ -628,21 +595,28 @@ export default function CompanyDashboard() {
                 </label>
                 <textarea
                   rows={4}
-                  value={jobForm.description}
-                  onChange={(e) => setJobForm({ ...jobForm, description: e.target.value })}
+                  name="description"
+                  value={postJobFormik.values.description}
+                  onChange={postJobFormik.handleChange}
                   placeholder="Detailed job responsibilities and requirements..."
                   className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400"
                 />
-                {jobFormErrors.description && (
-                  <p className="mt-1 text-[0.72rem] text-rose-400">{jobFormErrors.description}</p>
+                {postJobFormik.errors.description && (
+                  <p className="mt-1 text-[0.72rem] text-rose-400">{postJobFormik.errors.description}</p>
                 )}
               </div>
 
               <div className="flex justify-end gap-3 mt-2">
-                <Button variant="secondary" onClick={() => setIsPostJobModalOpen(false)}>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setIsPostJobModalOpen(false)
+                    postJobFormik.resetForm()
+                  }}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary" isLoading={actionLoading}>
+                <Button type="submit" variant="primary" isLoading={actionLoading || postJobFormik.isSubmitting}>
                   Publish Job →
                 </Button>
               </div>
@@ -658,27 +632,31 @@ export default function CompanyDashboard() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-sora text-xl font-bold text-white">Register Your Company</h3>
               <button
-                onClick={() => setIsRegisterCompanyModalOpen(false)}
+                onClick={() => {
+                  setIsRegisterCompanyModalOpen(false)
+                  companyCreateFormik.resetForm()
+                }}
                 className="text-slate-400 hover:text-white text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {companyFormErrors.general && (
+            {companyCreateFormik.errors.general && (
               <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-                {companyFormErrors.general}
+                {companyCreateFormik.errors.general}
               </div>
             )}
 
-            <form onSubmit={handleCreateCompanySubmit} className="flex flex-col gap-4">
+            <form onSubmit={companyCreateFormik.handleSubmit} className="flex flex-col gap-4">
               <Input
                 label="Company Name"
                 name="name"
                 required
-                value={companyForm.name}
-                onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
-                error={companyFormErrors.name}
+                value={companyCreateFormik.values.name}
+                onChange={companyCreateFormik.handleChange}
+                onBlur={companyCreateFormik.handleBlur}
+                error={companyCreateFormik.touched.name && companyCreateFormik.errors.name}
                 placeholder="e.g. ByteCorp Technologies"
               />
 
@@ -686,9 +664,10 @@ export default function CompanyDashboard() {
                 label="Registration Number"
                 name="registration_number"
                 required
-                value={companyForm.registration_number}
-                onChange={(e) => setCompanyForm({ ...companyForm, registration_number: e.target.value })}
-                error={companyFormErrors.registration_number}
+                value={companyCreateFormik.values.registration_number}
+                onChange={companyCreateFormik.handleChange}
+                onBlur={companyCreateFormik.handleBlur}
+                error={companyCreateFormik.touched.registration_number && companyCreateFormik.errors.registration_number}
                 placeholder="e.g. REG-998231"
               />
 
@@ -696,15 +675,17 @@ export default function CompanyDashboard() {
                 <Input
                   label="Website URL"
                   name="website"
-                  value={companyForm.website}
-                  onChange={(e) => setCompanyForm({ ...companyForm, website: e.target.value })}
+                  value={companyCreateFormik.values.website}
+                  onChange={companyCreateFormik.handleChange}
+                  onBlur={companyCreateFormik.handleBlur}
                   placeholder="https://example.com"
                 />
                 <Input
                   label="Headquarters Location"
                   name="location"
-                  value={companyForm.location}
-                  onChange={(e) => setCompanyForm({ ...companyForm, location: e.target.value })}
+                  value={companyCreateFormik.values.location}
+                  onChange={companyCreateFormik.handleChange}
+                  onBlur={companyCreateFormik.handleBlur}
                   placeholder="e.g. Karachi, Pakistan"
                 />
               </div>
@@ -715,18 +696,25 @@ export default function CompanyDashboard() {
                 </label>
                 <textarea
                   rows={3}
-                  value={companyForm.description}
-                  onChange={(e) => setCompanyForm({ ...companyForm, description: e.target.value })}
+                  name="description"
+                  value={companyCreateFormik.values.description}
+                  onChange={companyCreateFormik.handleChange}
                   placeholder="Brief overview of your company and industry..."
                   className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400"
                 />
               </div>
 
               <div className="flex justify-end gap-3 mt-2">
-                <Button variant="secondary" onClick={() => setIsRegisterCompanyModalOpen(false)}>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setIsRegisterCompanyModalOpen(false)
+                    companyCreateFormik.resetForm()
+                  }}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary" isLoading={actionLoading}>
+                <Button type="submit" variant="primary" isLoading={actionLoading || companyCreateFormik.isSubmitting}>
                   Create Company Profile →
                 </Button>
               </div>
@@ -744,7 +732,7 @@ export default function CompanyDashboard() {
               <button
                 onClick={() => {
                   setIsJoinCompanyModalOpen(false)
-                  setJoinFormErrors({})
+                  companyJoinFormik.resetForm()
                 }}
                 className="text-slate-400 hover:text-white text-lg font-bold cursor-pointer"
               >
@@ -756,20 +744,21 @@ export default function CompanyDashboard() {
               Enter the registration number of the company you want to join. Your account will be linked to the company as a team member.
             </p>
 
-            {joinFormErrors.general && (
+            {companyJoinFormik.errors.general && (
               <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-                {joinFormErrors.general}
+                {companyJoinFormik.errors.general}
               </div>
             )}
 
-            <form onSubmit={handleJoinCompanySubmit} className="flex flex-col gap-4">
+            <form onSubmit={companyJoinFormik.handleSubmit} className="flex flex-col gap-4">
               <Input
                 label="Company Registration Number"
                 name="registration_number"
                 required
-                value={joinRegNumber}
-                onChange={(e) => setJoinRegNumber(e.target.value)}
-                error={joinFormErrors.registration_number}
+                value={companyJoinFormik.values.registration_number}
+                onChange={companyJoinFormik.handleChange}
+                onBlur={companyJoinFormik.handleBlur}
+                error={companyJoinFormik.touched.registration_number && companyJoinFormik.errors.registration_number}
                 placeholder="e.g. REG12345"
               />
 
@@ -778,12 +767,12 @@ export default function CompanyDashboard() {
                   variant="secondary"
                   onClick={() => {
                     setIsJoinCompanyModalOpen(false)
-                    setJoinFormErrors({})
+                    companyJoinFormik.resetForm()
                   }}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary" isLoading={actionLoading}>
+                <Button type="submit" variant="primary" isLoading={actionLoading || companyJoinFormik.isSubmitting}>
                   Join Company →
                 </Button>
               </div>

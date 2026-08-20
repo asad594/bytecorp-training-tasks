@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState } from 'react'
+import { logoutUser } from '../api/authApi'
 
 /**
  * Note for React Fast Refresh: AuthContext object and AuthProvider component
@@ -24,32 +25,55 @@ export function AuthProvider({ children }) {
       return null
     }
   })
+  const [refreshToken, setRefreshToken] = useState(() => {
+    try {
+      return localStorage.getItem('jobboard_refresh') || null
+    } catch {
+      return null
+    }
+  })
 
-  const login = (userData, tokenData) => {
+  const login = (userData, accessToken, refreshTokenData) => {
     setUser(userData)
-    setToken(tokenData)
+    setToken(accessToken)
+    setRefreshToken(refreshTokenData || null)
     try {
       localStorage.setItem('jobboard_user', JSON.stringify(userData))
-      localStorage.setItem('jobboard_token', tokenData)
+      localStorage.setItem('jobboard_token', accessToken)
+      if (refreshTokenData) {
+        localStorage.setItem('jobboard_refresh', refreshTokenData)
+      }
     } catch (e) {
       console.error('Failed to save auth session to localStorage:', e)
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    setToken(null)
+  const logout = async () => {
+    const currentRefreshToken = refreshToken || localStorage.getItem('jobboard_refresh')
     try {
-      localStorage.removeItem('jobboard_user')
-      localStorage.removeItem('jobboard_token')
+      if (currentRefreshToken) {
+        await logoutUser(currentRefreshToken)
+      }
     } catch (e) {
-      console.error('Failed to clear auth session from localStorage:', e)
+      console.warn('Backend logout request failed or already invalidated:', e)
+    } finally {
+      setUser(null)
+      setToken(null)
+      setRefreshToken(null)
+      try {
+        localStorage.removeItem('jobboard_user')
+        localStorage.removeItem('jobboard_token')
+        localStorage.removeItem('jobboard_refresh')
+      } catch (e) {
+        console.error('Failed to clear auth session from localStorage:', e)
+      }
     }
   }
 
   const value = {
     user,
     token,
+    refreshToken,
     loading: false,
     isAuthenticated: !!token,
     role: user?.role || 'guest',
@@ -59,3 +83,4 @@ export function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
+

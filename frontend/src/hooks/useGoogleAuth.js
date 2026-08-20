@@ -24,7 +24,7 @@ export default function useGoogleAuth() {
         setLoading(true)
         setError(null)
         const result = await authApi.googleLogin(response.credential)
-        login(result.user, result.access)
+        login(result.user, result.access, result.refresh)
         navigate('/jobs')
       } catch (err) {
         let message = 'Google Sign-In failed. Please try again or log in with email.'

@@ -1,34 +1,37 @@
 ﻿import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useFormik } from 'formik'
 import AuthLayout from '../../components/common/AuthLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
-import useForm from '../../hooks/useForm'
 import * as authApi from '../../api/authApi'
+import forgotPasswordSchema from '../../schemas/forgotPasswordSchema'
+import { parseApiError } from '../../utils/apiError'
 
 export default function ForgotPassword() {
   const [message, setMessage] = useState('')
+  const [generalError, setGeneralError] = useState('')
 
-  const { form, errors, loading, handleChange, handleSubmit } = useForm(
-    { email: '' },
-    async (values, { setErrors }) => {
+  const formik = useFormik({
+    initialValues: { email: '' },
+    validationSchema: forgotPasswordSchema,
+    onSubmit: async (values, { setErrors }) => {
       setMessage('')
+      setGeneralError('')
       try {
         const res = await authApi.forgotPassword(values.email)
         setMessage(res.message || 'If an account with that email exists, a password reset link has been sent.')
       } catch (err) {
-        let msg = 'Failed to request password reset. Please try again.'
-        if (err.response?.data) {
-          const d = err.response.data
-          if (typeof d === 'string') msg = d
-          else if (typeof d.detail === 'string') msg = d.detail
-          else if (d.email) msg = Array.isArray(d.email) ? d.email.join(' ') : d.email
-          else if (d.error?.message) msg = d.error.message
+        const { general, fieldErrors } = parseApiError(err)
+        if (general) {
+          setGeneralError(general)
         }
-        setErrors({ general: msg })
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors)
+        }
       }
-    }
-  )
+    },
+  })
 
   return (
     <AuthLayout
@@ -48,27 +51,31 @@ export default function ForgotPassword() {
           </div>
         )}
 
-        {errors.general && (
+        {(generalError || formik.errors.general) && (
           <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs text-red-300">
-            {errors.general}
+            {generalError || formik.errors.general}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
           <Input
             label="Email Address"
             type="email"
             name="email"
             required
-            value={form.email || ''}
-            onChange={handleChange}
-            error={errors.email}
+            value={formik.values.email || ''}
+            onChange={(e) => {
+              if (generalError) setGeneralError('')
+              formik.handleChange(e)
+            }}
+            onBlur={formik.handleBlur}
+            error={formik.touched.email && formik.errors.email}
             placeholder="you@company.com"
           />
 
           <Button
             type="submit"
-            isLoading={loading}
+            isLoading={formik.isSubmitting}
             variant="primary"
             size="lg"
             className="mt-2 w-full btn-gradient-shimmer"

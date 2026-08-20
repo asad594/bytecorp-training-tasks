@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from companies.models import Company, CompanyMember
-from companies.serializers import CompanySerializer
+from companies.serializers import CompanySerializer, CompanyVerifySerializer
 
 
 class MyCompanyView(APIView):
@@ -131,3 +131,42 @@ class CompanyDetailView(APIView):
         company.deleted_by = request.user
         company.save()
         return Response(status=204)
+
+
+class CompanyPendingListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'admin':
+            raise PermissionDenied('Only admins can view pending companies.')
+
+        companies = Company.objects.filter(
+            is_verified=False,
+            deleted_at__isnull=True
+        ).order_by('-created_at')
+        serializer = CompanySerializer(companies, many=True)
+        return Response(serializer.data)
+
+
+class CompanyVerifyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return Company.objects.get(pk=pk, deleted_at__isnull=True)
+        except Company.DoesNotExist:
+            raise NotFound('Company not found.')
+
+    def patch(self, request, pk):
+        if request.user.role != 'admin':
+            raise PermissionDenied('Only admins can verify companies.')
+
+        company = self.get_object(pk)
+        serializer = CompanyVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        company.is_verified = serializer.validated_data.get('is_verified', True)
+        company.updated_by = request.user
+        company.save()
+
+        return Response(CompanySerializer(company).data)

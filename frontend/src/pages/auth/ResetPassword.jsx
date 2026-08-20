@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { useFormik } from 'formik'
 import AuthLayout from '../../components/common/AuthLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
-import useForm from '../../hooks/useForm'
 import * as authApi from '../../api/authApi'
+import resetPasswordSchema from '../../schemas/resetPasswordSchema'
+import { parseApiError } from '../../utils/apiError'
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()
@@ -14,27 +16,21 @@ export default function ResetPassword() {
 
   const [showPassword, setShowPassword] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [generalError, setGeneralError] = useState('')
 
   const initialValues = {
     newPassword: '',
     confirmPassword: '',
   }
 
-  const { form, errors, loading, handleChange, handleSubmit } = useForm(
+  const formik = useFormik({
     initialValues,
-    async (values, { setErrors }) => {
-      if (values.newPassword !== values.confirmPassword) {
-        setErrors({ confirmPassword: 'Passwords do not match.' })
-        return
-      }
-
-      if (values.newPassword.length < 8) {
-        setErrors({ newPassword: 'Password must be at least 8 characters long.' })
-        return
-      }
+    validationSchema: resetPasswordSchema,
+    onSubmit: async (values, { setErrors }) => {
+      setGeneralError('')
 
       if (!uid || !token) {
-        setErrors({ general: 'Invalid password reset link. Please request a new link.' })
+        setGeneralError('Invalid password reset link. Please request a new link.')
         return
       }
 
@@ -46,19 +42,16 @@ export default function ResetPassword() {
         })
         setSuccess(true)
       } catch (err) {
-        let msg = 'Failed to reset password. The link may be invalid or expired.'
-        if (err.response?.data) {
-          const d = err.response.data
-          if (typeof d === 'string') msg = d
-          else if (typeof d.detail === 'string') msg = d.detail
-          else if (d.new_password) msg = Array.isArray(d.new_password) ? d.new_password.join(' ') : d.new_password
-          else if (d.non_field_errors) msg = Array.isArray(d.non_field_errors) ? d.non_field_errors.join(' ') : d.non_field_errors
-          else if (d.error?.message) msg = d.error.message
+        const { general, fieldErrors } = parseApiError(err)
+        if (general) {
+          setGeneralError(general)
         }
-        setErrors({ general: msg })
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors)
+        }
       }
-    }
-  )
+    },
+  })
 
   return (
     <AuthLayout
@@ -89,10 +82,10 @@ export default function ResetPassword() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {errors.general && (
+          <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
+            {(generalError || formik.errors.general) && (
               <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300 animate-pulse">
-                {errors.general}
+                {generalError || formik.errors.general}
               </div>
             )}
 
@@ -102,9 +95,13 @@ export default function ResetPassword() {
                 type={showPassword ? 'text' : 'password'}
                 name="newPassword"
                 required
-                value={form.newPassword || ''}
-                onChange={handleChange}
-                error={errors.newPassword}
+                value={formik.values.newPassword || ''}
+                onChange={(e) => {
+                  if (generalError) setGeneralError('')
+                  formik.handleChange(e)
+                }}
+                onBlur={formik.handleBlur}
+                error={formik.touched.newPassword && formik.errors.newPassword}
                 placeholder="Minimum 8 characters"
               />
               <button
@@ -122,15 +119,19 @@ export default function ResetPassword() {
               type={showPassword ? 'text' : 'password'}
               name="confirmPassword"
               required
-              value={form.confirmPassword || ''}
-              onChange={handleChange}
-              error={errors.confirmPassword}
+              value={formik.values.confirmPassword || ''}
+              onChange={(e) => {
+                if (generalError) setGeneralError('')
+                formik.handleChange(e)
+              }}
+              onBlur={formik.handleBlur}
+              error={formik.touched.confirmPassword && formik.errors.confirmPassword}
               placeholder="Re-enter your new password"
             />
 
             <Button
               type="submit"
-              isLoading={loading}
+              isLoading={formik.isSubmitting}
               variant="primary"
               size="lg"
               className="mt-2 w-full btn-gradient-shimmer"

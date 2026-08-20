@@ -1,14 +1,15 @@
 ﻿import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useFormik } from 'formik'
 import { SpinnerIcon, GoogleIcon } from '@/assets/icons'
 import AuthLayout from '../../components/common/AuthLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
-// Wired custom hooks (useForm & useAuth)
-import useForm from '../../hooks/useForm'
 import useAuth from '../../hooks/useAuth'
 import useGoogleAuth from '../../hooks/useGoogleAuth'
 import * as authApi from '../../api/authApi'
+import loginSchema from '../../schemas/loginSchema'
+import { parseApiError } from '../../utils/apiError'
 
 const roleConfig = {
   job_seeker: {
@@ -65,53 +66,43 @@ export default function Login() {
   // Keep non-form UI state as local useState
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
+  const [generalError, setGeneralError] = useState('')
 
-  // Wired useForm custom hook for form state, validation errors, and submit handling
-  const { form, errors, loading, handleChange, handleSubmit } = useForm(
-    { email: '', password: '' },
-    async (values, { setErrors }) => {
+  // Formik form handling with Yup validation schema
+  const formik = useFormik({
+    initialValues: {
+      email: '',
+      password: '',
+    },
+    validationSchema: loginSchema,
+    onSubmit: async (values, { setErrors }) => {
+      setGeneralError('')
       try {
         const tokens = await authApi.login(currentRole, {
           email: values.email,
           password: values.password,
         })
         const userProfile = await authApi.getProfile(tokens.access)
-        authLogin(userProfile, tokens.access)
+        authLogin(userProfile, tokens.access, tokens.refresh)
 
         if (currentRole === 'job_seeker') {
           navigate('/jobs')
+        } else if (currentRole === 'admin') {
+          navigate('/admin/companies')
         } else {
           navigate('/dashboard')
         }
       } catch (err) {
-        let errorMessage = 'Login failed. Please check your email and password.'
-        if (!err.response) {
-          errorMessage =
-            'Unable to connect to the backend server. Please ensure the Django server is running.'
-        } else if (err.response?.data) {
-          const d = err.response.data
-          if (d.error) {
-            if (typeof d.error.message === 'string') errorMessage = d.error.message
-            if (d.error.details && typeof d.error.details === 'object') {
-              const fieldMsgs = []
-              for (const [field, msgs] of Object.entries(d.error.details)) {
-                const text = Array.isArray(msgs) ? msgs.join(' ') : String(msgs)
-                fieldMsgs.push(`${field}: ${text}`)
-              }
-              if (fieldMsgs.length > 0) errorMessage = fieldMsgs.join(' | ')
-            }
-          } else if (typeof d.detail === 'string') {
-            errorMessage = d.detail
-          } else if (typeof d.message === 'string') {
-            errorMessage = d.message
-          } else if (Array.isArray(d.non_field_errors)) {
-            errorMessage = d.non_field_errors.join(' ')
-          }
+        const { general, fieldErrors } = parseApiError(err)
+        if (general) {
+          setGeneralError(general)
         }
-        setErrors({ general: errorMessage })
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors)
+        }
       }
-    }
-  )
+    },
+  })
 
   return (
     <AuthLayout
@@ -165,35 +156,43 @@ export default function Login() {
         <p className="text-xs text-text-sub mb-6">{config.signInSubtitle}</p>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {(errors.general || googleError) && (
+        <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
+          {(generalError || formik.errors.general || googleError) && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300 animate-pulse">
-              {errors.general || googleError}
+              {generalError || formik.errors.general || googleError}
             </div>
           )}
 
-          {/* Email Field with field-specific error prop from useForm */}
+          {/* Email Field with field-specific error prop from Formik */}
           <Input
             label="Email Address"
             type="email"
             name="email"
             required
-            value={form.email || ''}
-            onChange={handleChange}
-            error={errors.email}
+            value={formik.values.email || ''}
+            onChange={(e) => {
+              if (generalError) setGeneralError('')
+              formik.handleChange(e)
+            }}
+            onBlur={formik.handleBlur}
+            error={formik.touched.email && formik.errors.email}
             placeholder={config.emailPlaceholder}
           />
 
-          {/* Password Field with field-specific error prop from useForm */}
+          {/* Password Field with field-specific error prop from Formik */}
           <div className="relative">
             <Input
               label="Password"
               type={showPassword ? 'text' : 'password'}
               name="password"
               required
-              value={form.password || ''}
-              onChange={handleChange}
-              error={errors.password}
+              value={formik.values.password || ''}
+              onChange={(e) => {
+                if (generalError) setGeneralError('')
+                formik.handleChange(e)
+              }}
+              onBlur={formik.handleBlur}
+              error={formik.touched.password && formik.errors.password}
               placeholder="••••••••••••"
             />
             <button
@@ -222,10 +221,10 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Submit Button using useForm loading state */}
+          {/* Submit Button using Formik isSubmitting state */}
           <Button
             type="submit"
-            isLoading={loading}
+            isLoading={formik.isSubmitting}
             variant="primary"
             size="lg"
             className="mt-2 w-full btn-gradient-shimmer"

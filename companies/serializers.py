@@ -59,3 +59,8 @@ class CompanySerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['company_id', 'created_at', 'updated_at', 'is_verified']
+
+
+class CompanyVerifySerializer(serializers.Serializer):
+    """Used by admins to approve/reject a pending company registration."""
+    is_verified = serializers.BooleanField(required=False, default=True)
