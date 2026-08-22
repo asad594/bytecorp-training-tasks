@@ -114,7 +114,11 @@ export default function JobsList() {
     const matchesSearch =
       job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchQuery.toLowerCase())
+      job.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.requirements &&
+        job.requirements.some((req) =>
+          req.toLowerCase().includes(searchQuery.toLowerCase())
+        ))
 
     const matchesLocation =
       locationFilter === 'All Locations' ||
@@ -173,6 +177,12 @@ export default function JobsList() {
               className="text-sm font-medium text-slate-300 transition hover:text-cyan-400 hover:scale-105"
             >
               My Applications
+            </Link>
+            <Link
+              to="/profile"
+              className="text-sm font-medium text-slate-300 transition hover:text-cyan-400 hover:scale-105"
+            >
+              Profile
             </Link>
           </nav>
 

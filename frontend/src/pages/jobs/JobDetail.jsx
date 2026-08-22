@@ -112,6 +112,12 @@ export default function JobDetail() {
             >
               My Applications
             </Link>
+            <Link
+              to="/profile"
+              className="text-sm font-medium text-slate-300 transition hover:text-cyan-400 hover:scale-105"
+            >
+              Profile
+            </Link>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -244,6 +250,7 @@ export default function JobDetail() {
             description: job.description,
             salary: formatSalary(job.salary_min, job.salary_max),
             posted: formatRelativeTime(job.created_at),
+            requirements: (job.skills || []).map((s) => s.name),
           }}
           onClose={() => setIsApplyModalOpen(false)}
           onSubmitApplication={handleApplySubmit}

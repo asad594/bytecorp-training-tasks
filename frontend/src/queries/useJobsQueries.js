@@ -93,8 +93,12 @@ export const useEnrichedJobsQuery = (options = {}) => {
           posted: formatRelativeTime(job.created_at),
           type: displayType,
           rawType: rawType,
-          tags: [displayType, job.location].filter(Boolean),
-          requirements: [],
+          tags: [
+            displayType,
+            job.location,
+            ...(job.skills || []).map((s) => s.name),
+          ].filter(Boolean),
+          requirements: (job.skills || []).map((s) => s.name),
           logoLetter,
           logoBg,
         }

@@ -33,6 +33,7 @@ export const jobPostSchema = Yup.object().shape({
   employment_type: Yup.string().optional(),
   location: Yup.string().optional(),
   status: Yup.string().optional(),
+  skill_ids: Yup.array().of(Yup.number()).optional(),
 })
 
 export default jobPostSchema

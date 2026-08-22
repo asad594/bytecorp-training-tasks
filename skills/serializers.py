@@ -19,7 +19,7 @@ class SkillSerializer(serializers.ModelSerializer):
         read_only_fields = ['skill_id', 'updated_at']
 
     def validate_name(self, value):
-        queryset = Skill.objects.filter(name__iexact=value)
+        queryset = Skill.objects.filter(name__iexact=value, deleted_at__isnull=True)
         if self.instance:
             queryset = queryset.exclude(pk=self.instance.pk)
         if queryset.exists():

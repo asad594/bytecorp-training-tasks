@@ -13,6 +13,7 @@ import useCompanyDashboard from '../../hooks/useCompanyDashboard'
 import jobPostSchema from '../../schemas/jobPostSchema'
 import companyCreateSchema from '../../schemas/companyCreateSchema'
 import companyJoinSchema from '../../schemas/companyJoinSchema'
+import SkillPicker from '../../components/common/SkillPicker'
 
 export default function CompanyDashboard() {
   const navigate = useNavigate()
@@ -52,6 +53,7 @@ export default function CompanyDashboard() {
       salary_max: 250000,
       description: '',
       status: 'open',
+      skill_ids: [],
     },
     validationSchema: jobPostSchema,
     onSubmit: async (values, { resetForm, setErrors }) => {
@@ -63,6 +65,7 @@ export default function CompanyDashboard() {
         salary_max: Number(values.salary_max),
         description: values.description,
         status: values.status,
+        skill_ids: values.skill_ids || [],
       })
 
       if (res.success) {
@@ -588,6 +591,12 @@ export default function CompanyDashboard() {
                   error={postJobFormik.touched.salary_max && postJobFormik.errors.salary_max}
                 />
               </div>
+
+              <SkillPicker
+                label="Required Skills"
+                value={postJobFormik.values.skill_ids}
+                onChange={(skills) => postJobFormik.setFieldValue('skill_ids', skills)}
+              />
 
               <div>
                 <label className="block text-xs font-semibold text-text-desc mb-1.5">

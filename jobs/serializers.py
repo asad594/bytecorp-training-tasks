@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from jobs.models import Job
+from skills.models import Skill
+from skills.serializers import SkillSerializer
 
 
 class JobSerializer(serializers.ModelSerializer):
@@ -50,6 +52,14 @@ class JobSerializer(serializers.ModelSerializer):
         default='draft',
         error_messages={'invalid_choice': '"{input}" is not a valid status.'}
     )
+    skills = SkillSerializer(many=True, read_only=True)
+    skill_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Skill.objects.filter(deleted_at__isnull=True),
+        many=True,
+        write_only=True,
+        required=False,
+        source='skills',
+    )
 
     class Meta:
         model = Job
@@ -65,6 +75,8 @@ class JobSerializer(serializers.ModelSerializer):
             'status',
             'created_at',
             'updated_at',
+            'skills',
+            'skill_ids',
         ]
         read_only_fields = ['job_id', 'company', 'created_at', 'updated_at']
 

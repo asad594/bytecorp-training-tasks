@@ -39,6 +39,12 @@ class User(AbstractBaseUser):
     bio = models.TextField(blank=True, null=True)
     years_of_experience = models.IntegerField(default=0)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='job_seeker')
+    skills = models.ManyToManyField(
+        'skills.Skill',
+        blank=True,
+        db_table='user_skills',
+        related_name='job_seekers',
+    )
 
     # OAuth support (Google) — job seekers only.
     auth_provider = models.CharField(

@@ -4,6 +4,8 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from accounts.models import User
 from accounts.validators import validate_strong_password
+from skills.models import Skill
+from skills.serializers import SkillSerializer
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -89,9 +91,27 @@ class CompanyRepRegisterSerializer(RegisterSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    skills = SkillSerializer(many=True, read_only=True)
+    skill_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Skill.objects.filter(deleted_at__isnull=True),
+        many=True,
+        write_only=True,
+        required=False,
+        source='skills',
+    )
+
     class Meta:
         model = User
-        fields = ['user_id', 'name', 'email', 'role', 'bio', 'years_of_experience']
+        fields = [
+            'user_id',
+            'name',
+            'email',
+            'role',
+            'bio',
+            'years_of_experience',
+            'skills',
+            'skill_ids',
+        ]
 
 
 # ---------------------------------------------------------------------------

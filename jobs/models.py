@@ -30,6 +30,12 @@ class Job(models.Model):
     salary_max = models.IntegerField()
     employment_type = models.CharField(max_length=20, choices=EMPLOYMENT_TYPE_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    skills = models.ManyToManyField(
+        'skills.Skill',
+        blank=True,
+        db_table='job_skills',
+        related_name='jobs',
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)

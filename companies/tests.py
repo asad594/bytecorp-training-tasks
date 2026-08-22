@@ -24,6 +24,7 @@ class CompanyAtomicTransactionTest(TestCase):
         """Normal flow: Company aur CompanyMember dono banni chahiye"""
         response = self.client.post('/api/v1/companies/', {
             'name': 'Test Company',
+            'registration_number': 'REG-TEST-0001',
         }, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -40,6 +41,7 @@ class CompanyAtomicTransactionTest(TestCase):
 
         response = self.client.post('/api/v1/companies/', {
             'name': 'Rollback Test Company',
+            'registration_number': 'REG-TEST-0002',
         }, format='json')
 
         # Exception handler ne isay graceful error response mein convert kar diya
