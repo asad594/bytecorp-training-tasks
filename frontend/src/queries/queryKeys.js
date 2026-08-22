@@ -31,6 +31,12 @@ export const queryKeys = {
     lists: () => ['skills', 'list'],
     detail: (id) => ['skills', 'detail', id],
   },
+  admin: {
+    all: ['admin'],
+    stats: () => ['admin', 'stats'],
+    users: (role = null) => ['admin', 'users', { role }],
+  },
 }
 
 export default queryKeys
+
