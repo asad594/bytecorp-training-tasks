@@ -47,6 +47,30 @@ class AccountsEndpoints:
     LOGOUT = 'logout/'
 
     ADMIN_CREATE = 'admin/create/'
+    ADMIN_STATS = 'admin/stats/'
+    ADMIN_USERS = 'admin/users/'
+
+    @classmethod
+    def full_admin_stats_path(cls):
+        """Full path for the admin stats endpoint (leading slash, for
+        use with the Django test client), e.g. '/api/v1/accounts/admin/stats/'."""
+        return '/' + APIPrefixes.ACCOUNTS + cls.ADMIN_STATS
+
+    @classmethod
+    def full_admin_users_path(cls, role=None):
+        """Full path for the admin user list endpoint (leading slash,
+        for use with the Django test client), e.g. '/api/v1/accounts/admin/users/'."""
+        path = '/' + APIPrefixes.ACCOUNTS + cls.ADMIN_USERS
+        if role:
+            path += f'?role={role}'
+        return path
+
+    @classmethod
+    def full_admin_create_path(cls):
+        """Full path for the admin create endpoint (leading slash, for
+        use with the Django test client), e.g. '/api/v1/accounts/admin/create/'."""
+        return '/' + APIPrefixes.ACCOUNTS + cls.ADMIN_CREATE
+
 
 
 class CompanyEndpoints:

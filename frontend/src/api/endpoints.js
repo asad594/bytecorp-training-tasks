@@ -43,12 +43,20 @@ export const SKILL_ENDPOINTS = {
   DETAIL: (id) => `/skills/${id}/`,
 }
 
+export const ADMIN_ENDPOINTS = {
+  STATS: '/accounts/admin/stats/',
+  USERS: (role) => (role ? `/accounts/admin/users/?role=${role}` : '/accounts/admin/users/'),
+}
+
+
 export const API_ENDPOINTS = {
   AUTH: AUTH_ENDPOINTS,
   COMPANIES: COMPANY_ENDPOINTS,
   JOBS: JOB_ENDPOINTS,
   APPLICATIONS: APPLICATION_ENDPOINTS,
   SKILLS: SKILL_ENDPOINTS,
+  ADMIN: ADMIN_ENDPOINTS,
 }
 
 export default API_ENDPOINTS
+

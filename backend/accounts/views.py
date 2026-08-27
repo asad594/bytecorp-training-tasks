@@ -19,8 +19,13 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from accounts.models import User
 from accounts.serializers import (
     RegisterSerializer, CompanyRepRegisterSerializer, UserSerializer,
-    GoogleAuthSerializer, ForgotPasswordSerializer, ResetPasswordSerializer
+    AdminUserSerializer, GoogleAuthSerializer, ForgotPasswordSerializer, ResetPasswordSerializer
 )
+from companies.models import Company
+from jobs.models import Job
+from job_applications.models import JobApplication
+from skills.models import Skill
+
 
 
 class BaseRoleRegisterView(APIView):
@@ -120,12 +125,84 @@ class AdminCreateView(APIView):
         )
 
 
+class AdminStatsView(APIView):
+    """
+    accounts/admin/stats/ — Aggregates platform-wide counts for the
+    unified admin dashboard. Only accessible by admins.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'admin':
+            raise PermissionDenied('Only an admin can view platform statistics.')
+
+        data = {
+            'users': {
+                'total': User.objects.filter(deleted_at__isnull=True).count(),
+                'job_seekers': User.objects.filter(role='job_seeker', deleted_at__isnull=True).count(),
+                'company_reps': User.objects.filter(role='company_rep', deleted_at__isnull=True).count(),
+                'admins': User.objects.filter(role='admin', deleted_at__isnull=True).count(),
+            },
+            'companies': {
+                'total': Company.objects.filter(deleted_at__isnull=True).count(),
+                'verified': Company.objects.filter(is_verified=True, deleted_at__isnull=True).count(),
+                'pending': Company.objects.filter(is_verified=False, deleted_at__isnull=True).count(),
+            },
+            'jobs': {
+                'total': Job.objects.filter(deleted_at__isnull=True).count(),
+                'open': Job.objects.filter(status='open', deleted_at__isnull=True).count(),
+                'closed': Job.objects.filter(status='closed', deleted_at__isnull=True).count(),
+                'draft': Job.objects.filter(status='draft', deleted_at__isnull=True).count(),
+            },
+            'applications': {
+                'total': JobApplication.objects.filter(deleted_at__isnull=True).count(),
+                'pending': JobApplication.objects.filter(status='pending', deleted_at__isnull=True).count(),
+                'reviewed': JobApplication.objects.filter(status='reviewed', deleted_at__isnull=True).count(),
+                'shortlisted': JobApplication.objects.filter(status='shortlisted', deleted_at__isnull=True).count(),
+                'rejected': JobApplication.objects.filter(status='rejected', deleted_at__isnull=True).count(),
+            },
+            'skills': {
+                'total': Skill.objects.filter(deleted_at__isnull=True).count(),
+            },
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class AdminUserListView(APIView):
+    """
+    accounts/admin/users/ — Returns a list of user accounts with optional
+    role filtering (?role=job_seeker|company_rep|admin). Uses AdminUserSerializer.
+    Only accessible by admins.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'admin':
+            raise PermissionDenied('Only an admin can view user accounts.')
+
+        role = request.query_params.get('role')
+        queryset = User.objects.filter(deleted_at__isnull=True)
+        if role:
+            queryset = queryset.filter(role=role)
+
+        queryset = queryset.order_by('-created_at')
+        serializer = AdminUserSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):
