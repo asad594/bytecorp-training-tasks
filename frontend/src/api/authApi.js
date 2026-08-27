@@ -42,6 +42,11 @@ export const getProfile = async (token) => {
   return response.data
 }
 
+export const updateProfile = async (userData) => {
+  const response = await axiosInstance.patch(AUTH_ENDPOINTS.PROFILE, userData)
+  return response.data
+}
+
 export const googleLogin = async (id_token) => {
   const response = await axiosInstance.post(AUTH_ENDPOINTS.AUTH_GOOGLE, {
     id_token,
@@ -61,5 +66,10 @@ export const logoutUser = async (refreshToken) => {
   const response = await axiosInstance.post(AUTH_ENDPOINTS.LOGOUT, {
     refresh: refreshToken,
   })
+  return response.data
+}
+
+export const createAdmin = async (adminData) => {
+  const response = await axiosInstance.post(AUTH_ENDPOINTS.ADMIN_CREATE, adminData)
   return response.data
 }

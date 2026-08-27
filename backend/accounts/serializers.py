@@ -114,6 +114,38 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
 
+<<<<<<< HEAD
+=======
+class AdminUserSerializer(serializers.ModelSerializer):
+    """
+    Dedicated serializer for the admin user list endpoint.
+    Includes created_at and exposes all fields as read-only.
+    """
+
+    class Meta:
+        model = User
+        fields = [
+            'user_id',
+            'name',
+            'email',
+            'role',
+            'bio',
+            'years_of_experience',
+            'created_at',
+        ]
+        read_only_fields = [
+            'user_id',
+            'name',
+            'email',
+            'role',
+            'bio',
+            'years_of_experience',
+            'created_at',
+        ]
+
+
+
+>>>>>>> origin/feature/skills-management
 # ---------------------------------------------------------------------------
 # OAuth (Google) - job seekers only
 # ---------------------------------------------------------------------------

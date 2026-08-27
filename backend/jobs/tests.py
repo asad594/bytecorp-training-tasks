@@ -1,4 +1,5 @@
 from django.test import TestCase
+<<<<<<< HEAD
 from rest_framework.test import APIClient
 from rest_framework import status
 from accounts.models import User
@@ -172,3 +173,7 @@ class SkillsApiTests(TestCase):
         # Recreating the same 50-char skill name succeeds
         res2 = self.client.post('/api/v1/skills/', {'name': max_len_name}, format='json')
         self.assertEqual(res2.status_code, status.HTTP_201_CREATED)
+=======
+
+# Create your tests here.
+>>>>>>> origin/feature/skills-management

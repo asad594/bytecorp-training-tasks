@@ -10,9 +10,11 @@ import ProtectedRoute from './ProtectedRoute'
 // Page Imports for Protected Routes
 import CompanyDashboard from '../pages/company/CompanyDashboard'
 import AdminCompanies from '../pages/admin/AdminCompanies'
+import AdminDashboard from '../pages/admin/AdminDashboard'
 import JobsList from '../pages/jobs/JobsList'
 import JobDetail from '../pages/jobs/JobDetail'
 import MyApplications from '../pages/applications/MyApplications'
+import MyProfile from '../pages/profile/MyProfile'
 
 export default function AppRoutes() {
   return (
@@ -45,9 +47,22 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/admin"
-        element={<Navigate to="/admin/companies" replace />}
+        path="/admin/:tab"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
       />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
 
       <Route
         path="/jobs"
@@ -70,6 +85,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['job_seeker']}>
             <MyApplications />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute allowedRoles={['job_seeker']}>
+            <MyProfile />
           </ProtectedRoute>
         }
       />

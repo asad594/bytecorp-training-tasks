@@ -1,10 +1,16 @@
 import axiosInstance from './axiosInstance'
 import { COMPANY_ENDPOINTS } from './endpoints'
 
+export const getCompanies = async () => {
+  const response = await axiosInstance.get(COMPANY_ENDPOINTS.BASE)
+  return response.data
+}
+
 export const getMyCompany = async () => {
   const response = await axiosInstance.get(COMPANY_ENDPOINTS.MY_COMPANY)
   return response.data
 }
+
 
 export const getCompany = async (id) => {
   const response = await axiosInstance.get(COMPANY_ENDPOINTS.DETAIL(id))
