@@ -14,10 +14,7 @@ load_dotenv()
 
 import os
 import logging
-<<<<<<< HEAD
 import dj_database_url
-=======
->>>>>>> origin/feature/skills-management
 from pathlib import Path
 from datetime import timedelta
 
@@ -62,10 +59,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-<<<<<<< HEAD
     'whitenoise.middleware.WhiteNoiseMiddleware',
-=======
->>>>>>> origin/feature/skills-management
     'corsheaders.middleware.CorsMiddleware',
     'observability.middleware.RequestLoggingMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -100,21 +94,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-<<<<<<< HEAD
     'default': dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
         conn_max_age=600,
     ),
-=======
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': os.environ.get('DB_PORT'),
-    },
->>>>>>> origin/feature/skills-management
     'logs_db': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('LOGS_DB_NAME'),
@@ -163,10 +146,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
-<<<<<<< HEAD
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-=======
->>>>>>> origin/feature/skills-management
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

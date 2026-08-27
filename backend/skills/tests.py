@@ -1,8 +1,4 @@
 from django.test import TestCase
-<<<<<<< HEAD
-
-# Create your tests here.
-=======
 from rest_framework.test import APIClient
 from rest_framework import status
 from accounts.models import User
@@ -35,7 +31,7 @@ class SkillsApiTests(TestCase):
 
     def test_get_skills_accessible_to_all_authenticated_roles(self):
         skill = Skill.objects.create(name='Python')
-        
+
         for user in [self.admin, self.job_seeker, self.company_rep]:
             self.client.force_authenticate(user=user)
             # List
@@ -176,4 +172,3 @@ class SkillsApiTests(TestCase):
         # Recreating the same 50-char skill name succeeds
         res2 = self.client.post('/api/v1/skills/', {'name': max_len_name}, format='json')
         self.assertEqual(res2.status_code, status.HTTP_201_CREATED)
->>>>>>> origin/feature/skills-management

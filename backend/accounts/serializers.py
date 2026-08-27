@@ -114,8 +114,6 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
 
-<<<<<<< HEAD
-=======
 class AdminUserSerializer(serializers.ModelSerializer):
     """
     Dedicated serializer for the admin user list endpoint.
@@ -144,8 +142,6 @@ class AdminUserSerializer(serializers.ModelSerializer):
         ]
 
 
-
->>>>>>> origin/feature/skills-management
 # ---------------------------------------------------------------------------
 # OAuth (Google) - job seekers only
 # ---------------------------------------------------------------------------

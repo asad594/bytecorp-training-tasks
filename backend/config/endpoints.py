@@ -47,8 +47,6 @@ class AccountsEndpoints:
     LOGOUT = 'logout/'
 
     ADMIN_CREATE = 'admin/create/'
-<<<<<<< HEAD
-=======
     ADMIN_STATS = 'admin/stats/'
     ADMIN_USERS = 'admin/users/'
 
@@ -72,8 +70,6 @@ class AccountsEndpoints:
         """Full path for the admin create endpoint (leading slash, for
         use with the Django test client), e.g. '/api/v1/accounts/admin/create/'."""
         return '/' + APIPrefixes.ACCOUNTS + cls.ADMIN_CREATE
-
->>>>>>> origin/feature/skills-management
 
 
 class CompanyEndpoints:
@@ -102,8 +98,6 @@ class CompanyEndpoints:
         real pk substituted in place of the '<int:pk>/' route converter, for use
         with the Django test client), e.g. '/api/v1/companies/5/verify/'."""
         return '/' + APIPrefixes.COMPANIES + f'{pk}/verify/'
-
-
 
 
 class JobEndpoints:

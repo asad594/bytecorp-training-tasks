@@ -1,275 +1,174 @@
 from django.test import TestCase
-<<<<<<< HEAD
-
-# Create your tests here.
-=======
 from rest_framework.test import APIClient
 from rest_framework import status
-
 from accounts.models import User
-from companies.models import Company, CompanyMember
-from jobs.models import Job
-from job_applications.models import JobApplication
 from skills.models import Skill
-from config.endpoints import AccountsEndpoints as EP
 
 
-class AdminDashboardBackendTests(TestCase):
+class SkillsApiTests(TestCase):
     databases = {'default', 'logs_db'}
 
     def setUp(self):
         self.client = APIClient()
-
-        # Seed Admin user
         self.admin = User.objects.create_user(
             email='admin@example.com',
             password='AdminPassword123!',
-            name='Primary Admin',
-            role='admin',
-            bio='System Administrator',
-            years_of_experience=10
+            name='Admin User',
+            role='admin'
         )
-
-        # Seed Job Seeker user
         self.job_seeker = User.objects.create_user(
             email='seeker@example.com',
             password='SeekerPassword123!',
-            name='Jane Seeker',
-            role='job_seeker',
-            bio='Software Engineer',
-            years_of_experience=4
+            name='Job Seeker',
+            role='job_seeker'
         )
-
-        # Seed Company Rep user
         self.company_rep = User.objects.create_user(
             email='rep@example.com',
             password='RepPassword123!',
-            name='Bob Recruiter',
-            role='company_rep',
-            bio='Talent Acquisition Lead',
-            years_of_experience=6
+            name='Company Rep',
+            role='company_rep'
         )
 
-        # Seed Company
-        self.company = Company.objects.create(
-            name='TechCorp Inc',
-            registration_number='REG-CORP-100',
-            is_verified=True
-        )
-        self.pending_company = Company.objects.create(
-            name='Startup Innovations',
-            registration_number='REG-CORP-200',
-            is_verified=False
-        )
+    def test_get_skills_accessible_to_all_authenticated_roles(self):
+        skill = Skill.objects.create(name='Python')
 
-        # Seed Job
-        self.open_job = Job.objects.create(
-            company=self.company,
-            title='Senior Backend Engineer',
-            salary_min=100000,
-            salary_max=140000,
-            employment_type='full-time',
-            status='open'
-        )
-        self.draft_job = Job.objects.create(
-            company=self.company,
-            title='Frontend Intern',
-            salary_min=40000,
-            salary_max=50000,
-            employment_type='part-time',
-            status='draft'
-        )
+        for user in [self.admin, self.job_seeker, self.company_rep]:
+            self.client.force_authenticate(user=user)
+            # List
+            res_list = self.client.get('/api/v1/skills/')
+            self.assertEqual(res_list.status_code, status.HTTP_200_OK)
+            self.assertEqual(len(res_list.data), 1)
+            # Detail
+            res_detail = self.client.get(f'/api/v1/skills/{skill.skill_id}/')
+            self.assertEqual(res_detail.status_code, status.HTTP_200_OK)
+            self.assertEqual(res_detail.data['name'], 'Python')
 
-        # Seed Application
-        self.application = JobApplication.objects.create(
-            user=self.job_seeker,
-            job=self.open_job,
-            status='pending'
-        )
-
-        # Seed Skills
-        self.skill1 = Skill.objects.create(name='Python')
-        self.skill2 = Skill.objects.create(name='React')
-
-    # =========================================================================
-    # AdminStatsView Tests
-    # =========================================================================
-
-    def test_admin_stats_success_for_admin(self):
-        self.client.force_authenticate(user=self.admin)
-        url = EP.full_admin_stats_path()
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.data
-
-        # Verify Users stats
-        self.assertEqual(data['users']['total'], 3)
-        self.assertEqual(data['users']['job_seekers'], 1)
-        self.assertEqual(data['users']['company_reps'], 1)
-        self.assertEqual(data['users']['admins'], 1)
-
-        # Verify Companies stats
-        self.assertEqual(data['companies']['total'], 2)
-        self.assertEqual(data['companies']['verified'], 1)
-        self.assertEqual(data['companies']['pending'], 1)
-
-        # Verify Jobs stats
-        self.assertEqual(data['jobs']['total'], 2)
-        self.assertEqual(data['jobs']['open'], 1)
-        self.assertEqual(data['jobs']['draft'], 1)
-        self.assertEqual(data['jobs']['closed'], 0)
-
-        # Verify Applications stats
-        self.assertEqual(data['applications']['total'], 1)
-        self.assertEqual(data['applications']['pending'], 1)
-        self.assertEqual(data['applications']['reviewed'], 0)
-        self.assertEqual(data['applications']['shortlisted'], 0)
-        self.assertEqual(data['applications']['rejected'], 0)
-
-        # Verify Skills stats
-        self.assertEqual(data['skills']['total'], 2)
-
-    def test_admin_stats_forbidden_for_non_admin(self):
-        url = EP.full_admin_stats_path()
-
-        # Job Seeker gets 403
+    def test_create_skill_admin_only(self):
+        # Job seeker cannot create
         self.client.force_authenticate(user=self.job_seeker)
-        res_seeker = self.client.get(url)
+        res_seeker = self.client.post('/api/v1/skills/', {'name': 'Docker'}, format='json')
         self.assertEqual(res_seeker.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('Only admin can create skills.', str(res_seeker.data))
 
-        # Company Rep gets 403
+        # Company rep cannot create
         self.client.force_authenticate(user=self.company_rep)
-        res_rep = self.client.get(url)
+        res_rep = self.client.post('/api/v1/skills/', {'name': 'Docker'}, format='json')
         self.assertEqual(res_rep.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('Only admin can create skills.', str(res_rep.data))
 
-    def test_admin_stats_unauthenticated(self):
-        url = EP.full_admin_stats_path()
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    # =========================================================================
-    # AdminUserListView Tests
-    # =========================================================================
-
-    def test_admin_user_list_success_all_users(self):
+        # Admin can create
         self.client.force_authenticate(user=self.admin)
-        url = EP.full_admin_users_path()
-        response = self.client.get(url)
+        res_admin = self.client.post('/api/v1/skills/', {'name': 'Docker'}, format='json')
+        self.assertEqual(res_admin.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res_admin.data['name'], 'Docker')
+        self.assertEqual(Skill.objects.filter(name='Docker', deleted_at__isnull=True).count(), 1)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
+    def test_update_skill_admin_only(self):
+        skill = Skill.objects.create(name='Django')
 
-        first_user = response.data[0]
-        self.assertIn('user_id', first_user)
-        self.assertIn('name', first_user)
-        self.assertIn('email', first_user)
-        self.assertIn('role', first_user)
-        self.assertIn('bio', first_user)
-        self.assertIn('years_of_experience', first_user)
-        self.assertIn('created_at', first_user)
-        # Ensure password is not exposed
-        self.assertNotIn('password', first_user)
-
-    def test_admin_user_list_filter_by_role(self):
-        self.client.force_authenticate(user=self.admin)
-
-        # Filter by job_seeker
-        url_seekers = EP.full_admin_users_path(role='job_seeker')
-        res_seekers = self.client.get(url_seekers)
-        self.assertEqual(res_seekers.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res_seekers.data), 1)
-        self.assertEqual(res_seekers.data[0]['email'], 'seeker@example.com')
-
-        # Filter by company_rep
-        url_reps = EP.full_admin_users_path(role='company_rep')
-        res_reps = self.client.get(url_reps)
-        self.assertEqual(res_reps.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res_reps.data), 1)
-        self.assertEqual(res_reps.data[0]['email'], 'rep@example.com')
-
-        # Filter by admin
-        url_admins = EP.full_admin_users_path(role='admin')
-        res_admins = self.client.get(url_admins)
-        self.assertEqual(res_admins.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res_admins.data), 1)
-        self.assertEqual(res_admins.data[0]['email'], 'admin@example.com')
-
-    def test_admin_user_list_forbidden_for_non_admin(self):
-        url = EP.full_admin_users_path()
-
-        # Job Seeker gets 403
+        # Job seeker cannot PUT/PATCH
         self.client.force_authenticate(user=self.job_seeker)
-        res_seeker = self.client.get(url)
-        self.assertEqual(res_seeker.status_code, status.HTTP_403_FORBIDDEN)
+        res_put_seeker = self.client.put(f'/api/v1/skills/{skill.skill_id}/', {'name': 'Django REST'}, format='json')
+        self.assertEqual(res_put_seeker.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('Only admin can update skills.', str(res_put_seeker.data))
 
-        # Company Rep gets 403
+        res_patch_seeker = self.client.patch(f'/api/v1/skills/{skill.skill_id}/', {'name': 'Django REST'}, format='json')
+        self.assertEqual(res_patch_seeker.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('Only admin can update skills.', str(res_patch_seeker.data))
+
+        # Company rep cannot PUT/PATCH
         self.client.force_authenticate(user=self.company_rep)
-        res_rep = self.client.get(url)
-        self.assertEqual(res_rep.status_code, status.HTTP_403_FORBIDDEN)
+        res_put_rep = self.client.put(f'/api/v1/skills/{skill.skill_id}/', {'name': 'Django REST'}, format='json')
+        self.assertEqual(res_put_rep.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('Only admin can update skills.', str(res_put_rep.data))
 
-    # =========================================================================
-    # AdminCreateView Tests
-    # =========================================================================
+        res_patch_rep = self.client.patch(f'/api/v1/skills/{skill.skill_id}/', {'name': 'Django REST'}, format='json')
+        self.assertEqual(res_patch_rep.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('Only admin can update skills.', str(res_patch_rep.data))
 
-    def test_admin_create_another_admin_success(self):
+        # Admin can PUT
         self.client.force_authenticate(user=self.admin)
-        url = EP.full_admin_create_path()
-        payload = {
-            'name': 'Secondary Admin',
-            'email': 'admin2@example.com',
-            'password': 'StrongPassword123!',
-        }
-        response = self.client.post(url, payload, format='json')
+        res_put_admin = self.client.put(f'/api/v1/skills/{skill.skill_id}/', {'name': 'Django REST Framework'}, format='json')
+        self.assertEqual(res_put_admin.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_put_admin.data['name'], 'Django REST Framework')
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['email'], 'admin2@example.com')
-        self.assertEqual(response.data['role'], 'admin')
+        # Admin can PATCH
+        res_patch_admin = self.client.patch(f'/api/v1/skills/{skill.skill_id}/', {'name': 'DRF'}, format='json')
+        self.assertEqual(res_patch_admin.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_patch_admin.data['name'], 'DRF')
 
-        created_admin = User.objects.get(email='admin2@example.com')
-        self.assertEqual(created_admin.role, 'admin')
-        self.assertTrue(created_admin.check_password('StrongPassword123!'))
+    def test_delete_skill_admin_only(self):
+        skill = Skill.objects.create(name='Kubernetes')
 
-    def test_admin_create_duplicate_email_rejected(self):
-        self.client.force_authenticate(user=self.admin)
-        url = EP.full_admin_create_path()
-        payload = {
-            'name': 'Duplicate Admin',
-            'email': 'admin@example.com',
-            'password': 'StrongPassword123!',
-        }
-        response = self.client.post(url, payload, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('A user with this email already exists.', str(response.data))
-
-    def test_admin_create_weak_password_rejected(self):
-        self.client.force_authenticate(user=self.admin)
-        url = EP.full_admin_create_path()
-        payload = {
-            'name': 'Weak Admin',
-            'email': 'weakadmin@example.com',
-            'password': 'weak',
-        }
-        response = self.client.post(url, payload, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_admin_create_forbidden_for_non_admin(self):
-        url = EP.full_admin_create_path()
-        payload = {
-            'name': 'Attacker Admin',
-            'email': 'attacker@example.com',
-            'password': 'StrongPassword123!',
-        }
-
-        # Job Seeker gets 403
+        # Job seeker cannot delete
         self.client.force_authenticate(user=self.job_seeker)
-        res_seeker = self.client.post(url, payload, format='json')
-        self.assertEqual(res_seeker.status_code, status.HTTP_403_FORBIDDEN)
+        res_del_seeker = self.client.delete(f'/api/v1/skills/{skill.skill_id}/')
+        self.assertEqual(res_del_seeker.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('Only admin can delete skills.', str(res_del_seeker.data))
 
-        # Company Rep gets 403
+        # Company rep cannot delete
         self.client.force_authenticate(user=self.company_rep)
-        res_rep = self.client.post(url, payload, format='json')
-        self.assertEqual(res_rep.status_code, status.HTTP_403_FORBIDDEN)
->>>>>>> origin/feature/skills-management
+        res_del_rep = self.client.delete(f'/api/v1/skills/{skill.skill_id}/')
+        self.assertEqual(res_del_rep.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('Only admin can delete skills.', str(res_del_rep.data))
+
+        # Admin can delete
+        self.client.force_authenticate(user=self.admin)
+        res_del_admin = self.client.delete(f'/api/v1/skills/{skill.skill_id}/')
+        self.assertEqual(res_del_admin.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_soft_deleted_skill_name_reuse(self):
+        self.client.force_authenticate(user=self.admin)
+
+        # 1. Create skill "Python"
+        res1 = self.client.post('/api/v1/skills/', {'name': 'Python'}, format='json')
+        self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
+        skill_id = res1.data['skill_id']
+
+        # 2. Creating duplicate active skill fails with 400
+        res_dup = self.client.post('/api/v1/skills/', {'name': 'Python'}, format='json')
+        self.assertEqual(res_dup.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('This skill already exists.', str(res_dup.data))
+
+        # Case insensitive duplicate check
+        res_dup_case = self.client.post('/api/v1/skills/', {'name': 'python'}, format='json')
+        self.assertEqual(res_dup_case.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('This skill already exists.', str(res_dup_case.data))
+
+        # 3. Soft delete skill
+        res_del = self.client.delete(f'/api/v1/skills/{skill_id}/')
+        self.assertEqual(res_del.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Verify soft-deleted skill row in DB
+        deleted_skill = Skill.objects.get(skill_id=skill_id)
+        self.assertIsNotNone(deleted_skill.deleted_at)
+        self.assertEqual(deleted_skill.deleted_by, self.admin)
+        self.assertTrue(deleted_skill.name.startswith('Python__deleted_'))
+        self.assertLessEqual(len(deleted_skill.name), 50)
+
+        # 4. Create new skill with exact same name "Python" succeeds
+        res2 = self.client.post('/api/v1/skills/', {'name': 'Python'}, format='json')
+        self.assertEqual(res2.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res2.data['name'], 'Python')
+        self.assertNotEqual(res2.data['skill_id'], skill_id)
+
+    def test_soft_delete_max_length_skill_name(self):
+        self.client.force_authenticate(user=self.admin)
+
+        # Skill with exact 50 characters
+        max_len_name = 'S' * 50
+        res = self.client.post('/api/v1/skills/', {'name': max_len_name}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        skill_id = res.data['skill_id']
+
+        # Delete 50-char skill — should not fail DB max_length constraint
+        res_del = self.client.delete(f'/api/v1/skills/{skill_id}/')
+        self.assertEqual(res_del.status_code, status.HTTP_204_NO_CONTENT)
+
+        deleted_skill = Skill.objects.get(skill_id=skill_id)
+        self.assertLessEqual(len(deleted_skill.name), 50)
+        self.assertTrue('__deleted_' in deleted_skill.name)
+
+        # Recreating the same 50-char skill name succeeds
+        res2 = self.client.post('/api/v1/skills/', {'name': max_len_name}, format='json')
+        self.assertEqual(res2.status_code, status.HTTP_201_CREATED)

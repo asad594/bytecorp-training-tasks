@@ -19,18 +19,12 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from accounts.models import User
 from accounts.serializers import (
     RegisterSerializer, CompanyRepRegisterSerializer, UserSerializer,
-<<<<<<< HEAD
-    GoogleAuthSerializer, ForgotPasswordSerializer, ResetPasswordSerializer
-)
-=======
     AdminUserSerializer, GoogleAuthSerializer, ForgotPasswordSerializer, ResetPasswordSerializer
 )
 from companies.models import Company
 from jobs.models import Job
 from job_applications.models import JobApplication
 from skills.models import Skill
-
->>>>>>> origin/feature/skills-management
 
 
 class BaseRoleRegisterView(APIView):
@@ -130,8 +124,6 @@ class AdminCreateView(APIView):
         )
 
 
-<<<<<<< HEAD
-=======
 class AdminStatsView(APIView):
     """
     accounts/admin/stats/ — Aggregates platform-wide counts for the
@@ -197,8 +189,6 @@ class AdminUserListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-
->>>>>>> origin/feature/skills-management
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -206,15 +196,12 @@ class ProfileView(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
-<<<<<<< HEAD
-=======
     def patch(self, request):
         serializer = UserSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
->>>>>>> origin/feature/skills-management
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
