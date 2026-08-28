@@ -211,6 +211,8 @@ class CorrelationIdFilter(logging.Filter):
         return True
 
 
+os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
