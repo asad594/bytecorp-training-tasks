@@ -185,13 +185,18 @@ GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 # Email settings (for password reset)
 # ---------------------------------------------------------------------------
 
-# Sends real emails via the Resend HTTPS API (works on any Railway plan,
-# unlike SMTP which is blocked on the Free/Hobby plan).
-EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
+# Sends real emails via the Brevo (formerly Sendinblue) HTTPS API. This
+# works on any Railway plan (unlike SMTP, which is blocked on the
+# Free/Hobby plan) and, unlike Resend's default sandbox domain, Brevo lets
+# a verified single sender address send to ANY recipient on the free plan
+# (300 emails/day, no domain purchase required).
+EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
 ANYMAIL = {
-    "RESEND_API_KEY": os.environ.get('RESEND_API_KEY', ''),
+    "BREVO_API_KEY": os.environ.get('BREVO_API_KEY', ''),
 }
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'onboarding@resend.dev')
+# Must be an email address you have verified as a sender in the Brevo
+# dashboard (Settings -> Senders, Domains & Dedicated IPs -> Senders).
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'jobboard.notificationss@gmail.com')
 
 # Frontend URL used to build the password reset link
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
