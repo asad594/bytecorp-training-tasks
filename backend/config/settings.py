@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Third party
     'corsheaders',
+    'anymail',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -184,15 +185,13 @@ GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 # Email settings (for password reset)
 # ---------------------------------------------------------------------------
 
-# Development: prints emails to the console instead of actually sending.
-# Switch to SMTP settings before going to production.
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@jobboard.com')
+# Sends real emails via the Resend HTTPS API (works on any Railway plan,
+# unlike SMTP which is blocked on the Free/Hobby plan).
+EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
+ANYMAIL = {
+    "RESEND_API_KEY": os.environ.get('RESEND_API_KEY', ''),
+}
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'onboarding@resend.dev')
 
 # Frontend URL used to build the password reset link
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
