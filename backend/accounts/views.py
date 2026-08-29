@@ -298,7 +298,7 @@ class ForgotPasswordView(APIView):
 
         user = User.objects.filter(email__iexact=email).first()
 
-        if user is not None:
+        if user is not None and user.role in ('job_seeker', 'company_rep'):
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
             reset_link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
