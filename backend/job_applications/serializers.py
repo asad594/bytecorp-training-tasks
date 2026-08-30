@@ -14,11 +14,27 @@ class JobApplicationSerializer(serializers.ModelSerializer):
             'max_length': 'Cover letter cannot exceed 2000 characters.'
         }
     )
+    resume = serializers.FileField(
+        required=True,
+        allow_null=False,
+        error_messages={
+            'required': 'Resume is required to apply.',
+            'invalid': 'Please upload a valid file.',
+        }
+    )
     status = serializers.ChoiceField(
         choices=JobApplication.STATUS_CHOICES,
         default='pending',
         error_messages={'invalid_choice': '"{input}" is not a valid status.'}
     )
+
+    def validate_resume(self, value):
+        if not value.name.lower().endswith('.pdf'):
+            raise serializers.ValidationError('Resume must be a PDF file.')
+        max_size_bytes = 5 * 1024 * 1024  # 5MB
+        if value.size > max_size_bytes:
+            raise serializers.ValidationError('Resume file size must not exceed 5MB.')
+        return value
 
     class Meta:
         model = JobApplication
@@ -27,6 +43,7 @@ class JobApplicationSerializer(serializers.ModelSerializer):
             'user',
             'job',
             'cover_letter',
+            'resume',
             'status',
             'created_at',
             'updated_at',
@@ -64,6 +81,7 @@ class CompanyJobApplicationSerializer(serializers.ModelSerializer):
             'job',
             'job_title',
             'cover_letter',
+            'resume',
             'status',
             'created_at',
             'updated_at',
@@ -76,6 +94,7 @@ class CompanyJobApplicationSerializer(serializers.ModelSerializer):
             'job',
             'job_title',
             'cover_letter',
+            'resume',
             'created_at',
             'updated_at',
         ]

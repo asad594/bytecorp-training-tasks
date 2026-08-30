@@ -79,8 +79,8 @@ export const useApplyForJobMutation = (options = {}) => {
   return useMutation({
     // Caller options first — hook-defined mutationFn/onSuccess below must always win
     ...options,
-    mutationFn: ({ jobId, coverLetter = '' }) =>
-      applicationsApi.applyForJob(jobId, coverLetter),
+    mutationFn: ({ jobId, coverLetter = '', resume }) =>
+      applicationsApi.applyForJob(jobId, coverLetter, resume),
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.companies.dashboard() })

@@ -12,10 +12,14 @@ export const getCompanyApplications = async (jobId = null) => {
   return response.data
 }
 
-export const applyForJob = async (jobId, coverLetter = '') => {
-  const response = await axiosInstance.post(APPLICATION_ENDPOINTS.BASE, {
-    job: jobId,
-    cover_letter: coverLetter,
+export const applyForJob = async (jobId, coverLetter = '', resume) => {
+  const formData = new FormData()
+  formData.append('job', jobId)
+  formData.append('cover_letter', coverLetter)
+  formData.append('resume', resume)
+
+  const response = await axiosInstance.post(APPLICATION_ENDPOINTS.BASE, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   })
   return response.data
 }

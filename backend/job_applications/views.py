@@ -39,7 +39,7 @@ class CompanyJobApplicationsView(APIView):
                 deleted_at__isnull=True
             ).select_related('user', 'job')
 
-        serializer = CompanyJobApplicationSerializer(applications, many=True)
+        serializer = CompanyJobApplicationSerializer(applications, many=True, context={'request': request})
         return Response(serializer.data, status=200)
 
 
@@ -50,15 +50,15 @@ class JobApplicationListCreateView(APIView):
         applications = JobApplication.objects.filter(
             user=request.user, deleted_at__isnull=True
         )
-        serializer = JobApplicationSerializer(applications, many=True)
+        serializer = JobApplicationSerializer(applications, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
         if request.user.role != 'job_seeker':
             raise PermissionDenied('Only job seekers can apply for jobs.')
 
-        if not isinstance(request.data, dict):
-            raise ValidationError('Invalid request format. Expected a JSON object.')
+        if not hasattr(request.data, 'get'):
+            raise ValidationError('Invalid request format. Expected form data or a JSON object.')
 
         job_id = request.data.get('job')
         try:
@@ -71,7 +71,7 @@ class JobApplicationListCreateView(APIView):
         ).exists():
             raise ValidationError('You have already applied to this job.')
 
-        serializer = JobApplicationSerializer(data=request.data)
+        serializer = JobApplicationSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save(user=request.user, updated_by=request.user, status='pending')
         return Response(serializer.data, status=201)
@@ -103,7 +103,7 @@ class JobApplicationDetailView(APIView):
         elif request.user.role == 'job_seeker':
             if application.user != request.user:
                 raise PermissionDenied('You do not have permission to view this application.')
-        serializer = JobApplicationSerializer(application)
+        serializer = JobApplicationSerializer(application, context={'request': request})
         return Response(serializer.data)
 
     def put(self, request, pk):
@@ -113,7 +113,7 @@ class JobApplicationDetailView(APIView):
         serializer = ApplicationStatusUpdateSerializer(application, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save(updated_by=request.user)
-        return Response(JobApplicationSerializer(application).data)
+        return Response(JobApplicationSerializer(application, context={'request': request}).data)
 
     def patch(self, request, pk):
         application = self.get_object(pk)
@@ -122,7 +122,7 @@ class JobApplicationDetailView(APIView):
         serializer = ApplicationStatusUpdateSerializer(application, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save(updated_by=request.user)
-        return Response(JobApplicationSerializer(application).data)
+        return Response(JobApplicationSerializer(application, context={'request': request}).data)
 
     def delete(self, request, pk):
         application = self.get_object(pk)

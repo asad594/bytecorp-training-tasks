@@ -31,6 +31,19 @@ export default function ApplicantCard({ app, onUpdateStatus, showJobTitle = true
         </div>
       )}
 
+      {app.resume && (
+        <div className="mb-4">
+          <a
+            href={app.resume}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/30 transition"
+          >
+            📄 View Resume
+          </a>
+        </div>
+      )}
+
       {/* Quick Action Buttons for Employer */}
       <div className="flex items-center gap-2 border-t border-white/10 pt-3">
         <span className="text-[0.7rem] font-semibold text-slate-400">Set Status:</span>

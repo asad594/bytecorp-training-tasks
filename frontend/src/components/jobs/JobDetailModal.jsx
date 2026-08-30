@@ -11,6 +11,8 @@ export default function JobDetailModal({
   submitError = null,
 }) {
   const [coverLetter, setCoverLetter] = useState('')
+  const [resume, setResume] = useState(null)
+  const [resumeError, setResumeError] = useState('')
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -24,10 +26,36 @@ export default function JobDetailModal({
 
   if (!job) return null
 
+  const handleResumeChange = (e) => {
+    const file = e.target.files?.[0] || null
+    setResumeError('')
+    if (!file) {
+      setResume(null)
+      return
+    }
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setResumeError('Please upload a PDF file.')
+      setResume(null)
+      e.target.value = ''
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setResumeError('File size must not exceed 5MB.')
+      setResume(null)
+      e.target.value = ''
+      return
+    }
+    setResume(file)
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (!resume) {
+      setResumeError('Resume is required to apply.')
+      return
+    }
     if (onSubmitApplication) {
-      onSubmitApplication(e, coverLetter)
+      onSubmitApplication(e, coverLetter, resume)
     }
   }
 
@@ -118,6 +146,24 @@ export default function JobDetailModal({
                   placeholder="Introduce yourself or share why you're a great fit for this role..."
                   className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-desc mb-1.5">
+                  Resume / CV <span className="text-rose-400 font-normal">(Required, PDF only, max 5MB)</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={handleResumeChange}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-500/20 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-cyan-300 outline-none focus:border-cyan-400"
+                />
+                {resume && (
+                  <p className="mt-1.5 text-[0.7rem] text-emerald-300">Selected: {resume.name}</p>
+                )}
+                {resumeError && (
+                  <p className="mt-1.5 text-[0.7rem] text-rose-400">{resumeError}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-between gap-3 pt-2">

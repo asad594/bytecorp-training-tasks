@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import FileExtensionValidator
 from accounts.models import User
 from jobs.models import Job
 
@@ -25,6 +26,10 @@ class JobApplication(models.Model):
         db_column='job_id'
     )
     cover_letter = models.TextField(blank=True, null=True)
+    resume = models.FileField(
+        upload_to='resumes/%Y/%m/',
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])],
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     created_at = models.DateTimeField(auto_now_add=True)

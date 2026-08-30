@@ -74,7 +74,7 @@ export default function JobsList() {
     setSubmitAppError(null)
   }
 
-  const submitApplication = async (e, coverLetter) => {
+  const submitApplication = async (e, coverLetter, resume) => {
     if (e && e.preventDefault) e.preventDefault()
     if (!selectedJobModal) return
 
@@ -82,7 +82,7 @@ export default function JobsList() {
 
     try {
       const jobId = selectedJobModal.id || selectedJobModal.job_id
-      await applyMutation.mutateAsync({ jobId, coverLetter: coverLetter || '' })
+      await applyMutation.mutateAsync({ jobId, coverLetter: coverLetter || '', resume })
       setAppliedSuccess(true)
       if (submitTimerRef.current) clearTimeout(submitTimerRef.current)
       submitTimerRef.current = setTimeout(() => {
@@ -95,9 +95,17 @@ export default function JobsList() {
         const d = err.response.data
         if (typeof d === 'string') msg = d
         else if (typeof d.detail === 'string') msg = d.detail
-        else if (d.error?.message) msg = d.error.message
+        else if (d.error?.details) {
+          const details = d.error.details
+          if (details.resume) msg = Array.isArray(details.resume) ? details.resume.join(' ') : details.resume
+          else if (details.cover_letter) msg = Array.isArray(details.cover_letter) ? details.cover_letter.join(' ') : details.cover_letter
+          else if (details.non_field_errors) msg = Array.isArray(details.non_field_errors) ? details.non_field_errors.join(' ') : details.non_field_errors
+          else if (typeof details === 'object') msg = Object.values(details).flat().join(' ')
+          else msg = d.error.message || msg
+        } else if (d.error?.message) msg = d.error.message
         else if (Array.isArray(d.non_field_errors)) msg = d.non_field_errors.join(' ')
         else if (d.cover_letter) msg = Array.isArray(d.cover_letter) ? d.cover_letter.join(' ') : d.cover_letter
+        else if (d.resume) msg = Array.isArray(d.resume) ? d.resume.join(' ') : d.resume
       }
       setSubmitAppError(msg)
     }
