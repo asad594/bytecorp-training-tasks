@@ -69,6 +69,7 @@ class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
 class CompanyJobApplicationSerializer(serializers.ModelSerializer):
     applicant_name = serializers.CharField(source='user.name', read_only=True)
     applicant_email = serializers.CharField(source='user.email', read_only=True)
+    applicant_years_of_experience = serializers.IntegerField(source='user.years_of_experience', read_only=True)
     job_title = serializers.CharField(source='job.title', read_only=True)
 
     class Meta:
@@ -78,6 +79,7 @@ class CompanyJobApplicationSerializer(serializers.ModelSerializer):
             'user',
             'applicant_name',
             'applicant_email',
+            'applicant_years_of_experience',
             'job',
             'job_title',
             'cover_letter',
@@ -91,6 +93,7 @@ class CompanyJobApplicationSerializer(serializers.ModelSerializer):
             'user',
             'applicant_name',
             'applicant_email',
+            'applicant_years_of_experience',
             'job',
             'job_title',
             'cover_letter',

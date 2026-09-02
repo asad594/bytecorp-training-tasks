@@ -10,6 +10,11 @@ export default function ApplicantCard({ app, onUpdateStatus, showJobTitle = true
             {app.applicant_name || 'Candidate'}
           </h4>
           <p className="text-xs text-cyan-accent">{app.applicant_email}</p>
+          {app.applicant_years_of_experience != null && (
+            <p className="text-[0.7rem] text-slate-400 mt-0.5">
+              {app.applicant_years_of_experience} yr(s) experience
+            </p>
+          )}
         </div>
         <Badge
           variant={getApplicationStatusVariant(app.status)}

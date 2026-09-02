@@ -49,6 +49,7 @@ export default function Register() {
     password: '',
     confirmPassword: '',
     agreeTerms: false,
+    years_of_experience: '',
   }
 
   // Formik form handling with Yup validation schema
@@ -63,6 +64,9 @@ export default function Register() {
           name: fullName,
           email: values.email,
           password: values.password,
+          ...(currentRole === 'job_seeker' && values.years_of_experience !== ''
+            ? { years_of_experience: Number(values.years_of_experience) }
+            : {}),
         })
         navigate(`/login/${currentRole}`, {
           state: { message: 'Account created successfully! Please sign in.' },
@@ -174,6 +178,25 @@ export default function Register() {
             error={formik.touched.email && formik.errors.email}
             placeholder="you@domain.com"
           />
+
+          {/* Years of Experience (job seekers only) with field-specific error from Formik */}
+          {currentRole === 'job_seeker' && (
+            <Input
+              label="Years of Experience"
+              type="number"
+              name="years_of_experience"
+              min="0"
+              max="60"
+              value={formik.values.years_of_experience ?? ''}
+              onChange={(e) => {
+                if (generalError) setGeneralError('')
+                formik.handleChange(e)
+              }}
+              onBlur={formik.handleBlur}
+              error={formik.touched.years_of_experience && formik.errors.years_of_experience}
+              placeholder="e.g. 2"
+            />
+          )}
 
           {/* Password with field-specific error from Formik */}
           <div className="relative">
