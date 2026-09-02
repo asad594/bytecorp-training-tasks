@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useFormik } from 'formik'
-import { SpinnerIcon, GoogleIcon } from '@/assets/icons'
+import { SpinnerIcon, GoogleIcon, EyeIcon, EyeOffIcon } from '@/assets/icons'
 import AuthLayout from '../../components/common/AuthLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
@@ -198,10 +198,14 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setShowPassword((s) => !s)}
-              className="absolute right-3 top-9 text-base text-slate-400 hover:text-white transition duration-200 hover:scale-125 opacity-80 cursor-pointer"
+              className="absolute right-3 top-9 text-slate-400 hover:text-white transition duration-200 opacity-80 cursor-pointer"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              {showPassword ? '🙈' : '👁'}
+              {showPassword ? (
+                <EyeOffIcon width="18" height="18" stroke="currentColor" strokeWidth="2" />
+              ) : (
+                <EyeIcon width="18" height="18" stroke="currentColor" strokeWidth="2" />
+              )}
             </button>
           </div>
 

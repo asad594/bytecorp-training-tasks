@@ -4,6 +4,7 @@ import { useFormik } from 'formik'
 import AuthLayout from '../../components/common/AuthLayout'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
+import { EyeIcon, EyeOffIcon } from '@/assets/icons'
 import * as authApi from '../../api/authApi'
 import resetPasswordSchema from '../../schemas/resetPasswordSchema'
 import { parseApiError } from '../../utils/apiError'
@@ -107,10 +108,14 @@ export default function ResetPassword() {
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3 top-9 text-base text-slate-400 hover:text-white transition duration-200 hover:scale-125 opacity-80 cursor-pointer"
+                className="absolute right-3 top-9 text-slate-400 hover:text-white transition duration-200 opacity-80 cursor-pointer"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? '🙈' : '👁'}
+                {showPassword ? (
+                  <EyeOffIcon width="18" height="18" stroke="currentColor" strokeWidth="2" />
+                ) : (
+                  <EyeIcon width="18" height="18" stroke="currentColor" strokeWidth="2" />
+                )}
               </button>
             </div>
 
