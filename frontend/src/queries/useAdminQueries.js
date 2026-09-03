@@ -35,3 +35,42 @@ export const useCreateAdminMutation = (options = {}) => {
     },
   })
 }
+
+export const useUpdateAdminUserMutation = (options = {}) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    // Caller options first — hook-defined mutationFn/onSuccess below must always win
+    ...options,
+    mutationFn: ({ userId, data }) => adminApi.updateAdminUser(userId, data),
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.all })
+      options.onSuccess?.(data, variables, context)
+    },
+  })
+}
+
+export const useDeleteAdminUserMutation = (options = {}) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    // Caller options first — hook-defined mutationFn/onSuccess below must always win
+    ...options,
+    mutationFn: (userId) => adminApi.deleteAdminUser(userId),
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.all })
+      options.onSuccess?.(data, variables, context)
+    },
+  })
+}
+
+export const useSetAdminUserBanStatusMutation = (options = {}) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    // Caller options first — hook-defined mutationFn/onSuccess below must always win
+    ...options,
+    mutationFn: ({ userId, isBanned }) => adminApi.setAdminUserBanStatus(userId, isBanned),
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.all })
+      options.onSuccess?.(data, variables, context)
+    },
+  })
+}

@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.exceptions import ValidationError, PermissionDenied, AuthenticationFailed
+from rest_framework.exceptions import ValidationError, PermissionDenied, AuthenticationFailed, NotFound
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -19,7 +19,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from accounts.models import User
 from accounts.serializers import (
     RegisterSerializer, CompanyRepRegisterSerializer, UserSerializer,
-    AdminUserSerializer, GoogleAuthSerializer, ForgotPasswordSerializer, ResetPasswordSerializer
+    AdminUserSerializer, AdminUserUpdateSerializer, GoogleAuthSerializer,
+    ForgotPasswordSerializer, ResetPasswordSerializer
 )
 from companies.models import Company
 from jobs.models import Job
@@ -69,6 +70,26 @@ class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
     allowed_role = None
 
     def validate(self, attrs):
+        # Django's auth backend treats a banned user as inactive, so the
+        # default flow below would just raise the generic "no active
+        # account" error and never distinguish "banned" from "wrong
+        # password" or "no such account". Check for that case explicitly
+        # first — only once the password is confirmed correct, so this
+        # can't be used to probe whether an email is banned/registered.
+        email = attrs.get(self.username_field)
+        password = attrs.get('password')
+        if email and password:
+            candidate = User.objects.filter(
+                **{f'{self.username_field}__iexact': email},
+                deleted_at__isnull=True,
+                is_banned=True,
+            ).first()
+            if candidate and candidate.check_password(password):
+                raise AuthenticationFailed(
+                    'Your account has been banned. Please contact the platform administrator to get unbanned.',
+                    code='account_banned',
+                )
+
         data = super().validate(attrs)
         if self.allowed_role and self.user.role != self.allowed_role:
             raise AuthenticationFailed(
@@ -189,6 +210,84 @@ class AdminUserListView(APIView):
         queryset = queryset.order_by('-created_at')
         serializer = AdminUserSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminUserDetailView(APIView):
+    """
+    accounts/admin/users/<pk>/ — Admin-only edit and soft-delete of a
+    single user account.
+
+    PATCH: edit name/email/bio/years_of_experience via AdminUserUpdateSerializer.
+    DELETE: soft-delete (sets deleted_at/deleted_by) — the user disappears
+    from the admin list and can no longer log in, matching the soft-delete
+    pattern used across the rest of the app (companies, jobs).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return User.objects.get(pk=pk, deleted_at__isnull=True)
+        except User.DoesNotExist:
+            raise NotFound('User not found.')
+
+    def patch(self, request, pk):
+        if request.user.role != 'admin':
+            raise PermissionDenied('Only an admin can edit user accounts.')
+
+        target = self.get_object(pk)
+        serializer = AdminUserUpdateSerializer(target, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(updated_by=request.user)
+        return Response(AdminUserSerializer(target).data, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        if request.user.role != 'admin':
+            raise PermissionDenied('Only an admin can delete user accounts.')
+
+        target = self.get_object(pk)
+        if target.pk == request.user.pk:
+            raise ValidationError('You cannot delete your own account.')
+
+        import datetime
+        target.deleted_at = datetime.datetime.now()
+        target.deleted_by = request.user
+        target.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdminUserBanView(APIView):
+    """
+    accounts/admin/users/<pk>/ban/ — Admin-only ban/unban toggle.
+    Unlike soft-delete, a banned user stays visible in the admin list
+    (flagged as banned) and can be unbanned later; they just can't log
+    in or authenticate while banned (User.is_active checks is_banned).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return User.objects.get(pk=pk, deleted_at__isnull=True)
+        except User.DoesNotExist:
+            raise NotFound('User not found.')
+
+    def patch(self, request, pk):
+        if request.user.role != 'admin':
+            raise PermissionDenied('Only an admin can ban or unban user accounts.')
+
+        target = self.get_object(pk)
+        if target.pk == request.user.pk:
+            raise ValidationError('You cannot ban your own account.')
+
+        is_banned = request.data.get('is_banned')
+        if is_banned is None:
+            raise ValidationError({'is_banned': 'This field is required (true or false).'})
+
+        import datetime
+        target.is_banned = bool(is_banned)
+        target.banned_at = datetime.datetime.now() if target.is_banned else None
+        target.banned_by = request.user if target.is_banned else None
+        target.save()
+        return Response(AdminUserSerializer(target).data, status=status.HTTP_200_OK)
 
 
 class ProfileView(APIView):

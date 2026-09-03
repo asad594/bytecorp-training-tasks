@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import Button from '../../components/common/Button'
 import Badge from '../../components/common/Badge'
-import { useAdminUsersQuery } from '../../queries/useAdminQueries'
+import EditUserModal from './EditUserModal'
+import {
+  useAdminUsersQuery,
+  useDeleteAdminUserMutation,
+  useSetAdminUserBanStatusMutation,
+} from '../../queries/useAdminQueries'
 
 export default function AdminUsersTab() {
   const [selectedRole, setSelectedRole] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [editingUser, setEditingUser] = useState(null)
+  const [actionError, setActionError] = useState('')
 
   const {
     data: users = [],
@@ -15,6 +22,28 @@ export default function AdminUsersTab() {
     refetch,
     isFetching,
   } = useAdminUsersQuery(selectedRole)
+
+  const { mutate: deleteUser, isPending: isDeleting, variables: deletingVars } = useDeleteAdminUserMutation({
+    onError: (err) => setActionError(err?.response?.data?.detail || err?.message || 'Failed to delete user.'),
+  })
+
+  const { mutate: setBanStatus, isPending: isBanning, variables: banningVars } = useSetAdminUserBanStatusMutation({
+    onError: (err) => setActionError(err?.response?.data?.detail || err?.message || 'Failed to update ban status.'),
+  })
+
+  const handleDelete = (u) => {
+    setActionError('')
+    if (!window.confirm(`Delete ${u.name || u.email}? This will soft-delete the account.`)) return
+    deleteUser(u.user_id)
+  }
+
+  const handleToggleBan = (u) => {
+    setActionError('')
+    const nextIsBanned = !u.is_banned
+    const verb = nextIsBanned ? 'ban' : 'unban'
+    if (!window.confirm(`Are you sure you want to ${verb} ${u.name || u.email}?`)) return
+    setBanStatus({ userId: u.user_id, isBanned: nextIsBanned })
+  }
 
   const filteredUsers = users.filter((u) => {
     if (!searchQuery.trim()) return true
@@ -51,7 +80,7 @@ export default function AdminUsersTab() {
               User Accounts
             </h1>
             <p className="mt-1 text-xs text-text-secondary sm:text-sm">
-              Read-only index of all registered job seekers, company representatives, and administrators.
+              Manage all registered job seekers, company representatives, and administrators.
             </p>
           </div>
 
@@ -144,6 +173,14 @@ export default function AdminUsersTab() {
         </div>
       )}
 
+      {/* Action Error (edit/ban/delete) */}
+      {actionError && (
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-300 flex items-center justify-between">
+          <span>⚠️ {actionError}</span>
+          <button onClick={() => setActionError('')} className="text-slate-400 hover:text-white">✕</button>
+        </div>
+      )}
+
       {/* Loading State */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20">
@@ -178,10 +215,17 @@ export default function AdminUsersTab() {
                       })
                     : 'N/A'
 
+                  const isThisDeleting = isDeleting && deletingVars === u.user_id
+                  const isThisBanning = isBanning && banningVars?.userId === u.user_id
+
                   return (
                     <div
                       key={u.user_id}
-                      className="group relative rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-lg backdrop-blur-xl transition duration-300 hover:border-cyan-400/30 hover:bg-white/[0.07]"
+                      className={`group relative rounded-2xl border p-5 shadow-lg backdrop-blur-xl transition duration-300 ${
+                        u.is_banned
+                          ? 'border-rose-500/30 bg-rose-500/[0.05] hover:border-rose-400/40'
+                          : 'border-white/10 bg-white/[0.04] hover:border-cyan-400/30 hover:bg-white/[0.07]'
+                      }`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-start gap-4">
@@ -194,6 +238,9 @@ export default function AdminUsersTab() {
                                 {u.name || 'Anonymous User'}
                               </h3>
                               {getRoleBadge(u.role)}
+                              {u.is_banned && (
+                                <Badge variant="rose" size="sm">Banned 🚫</Badge>
+                              )}
                             </div>
                             <p className="mt-0.5 text-xs font-mono text-cyan-accent">
                               {u.email}
@@ -234,6 +281,35 @@ export default function AdminUsersTab() {
                           <span className="text-[11px] font-mono text-slate-500">ID #{u.user_id}</span>
                         </div>
                       </div>
+
+                      {/* Admin Actions */}
+                      {u.role !== 'admin' && (
+                        <div className="mt-4 flex items-center gap-2 border-t border-white/8 pt-3">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setEditingUser(u)}
+                          >
+                            ✏️ Edit
+                          </Button>
+                          <Button
+                            variant={u.is_banned ? 'emerald' : 'outline'}
+                            size="sm"
+                            isLoading={isThisBanning}
+                            onClick={() => handleToggleBan(u)}
+                          >
+                            {u.is_banned ? '✅ Unban' : '🚫 Ban'}
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            isLoading={isThisDeleting}
+                            onClick={() => handleDelete(u)}
+                          >
+                            🗑️ Delete
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -242,6 +318,11 @@ export default function AdminUsersTab() {
           )}
         </>
       )}
+
+      {editingUser && (
+        <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} />
+      )}
     </div>
   )
 }
+

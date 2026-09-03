@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom'
+
 export default function Modal({
   isOpen = true,
   onClose,
@@ -9,7 +11,15 @@ export default function Modal({
 }) {
   if (!isOpen) return null
 
-  return (
+  // Rendered via a portal straight into document.body so that a `fixed`
+  // modal is never positioned relative to some ancestor that happens to
+  // have a `transform` applied (e.g. a parent using the `animate-fade-in-up`
+  // CSS animation, which leaves `transform: translateY(0) scale(1)` on the
+  // element even after it finishes because of `animation-fill-mode: forwards`).
+  // Any non-`none` transform on an ancestor creates a new containing block
+  // for `position: fixed` descendants, which was trapping this modal deep
+  // inside the page instead of centering it in the viewport.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md animate-fade-in">
       <div
         className={`w-full ${maxWidth} rounded-2xl border border-white/14 bg-brand-card p-6 sm:p-8 shadow-2xl backdrop-blur-2xl ${className}`}
@@ -32,6 +42,7 @@ export default function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

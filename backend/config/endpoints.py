@@ -49,6 +49,8 @@ class AccountsEndpoints:
     ADMIN_CREATE = 'admin/create/'
     ADMIN_STATS = 'admin/stats/'
     ADMIN_USERS = 'admin/users/'
+    ADMIN_USER_DETAIL = 'admin/users/<int:pk>/'
+    ADMIN_USER_BAN = 'admin/users/<int:pk>/ban/'
 
     @classmethod
     def full_admin_stats_path(cls):
@@ -70,6 +72,18 @@ class AccountsEndpoints:
         """Full path for the admin create endpoint (leading slash, for
         use with the Django test client), e.g. '/api/v1/accounts/admin/create/'."""
         return '/' + APIPrefixes.ACCOUNTS + cls.ADMIN_CREATE
+
+    @classmethod
+    def full_admin_user_detail_path(cls, user_id):
+        """Full path for the admin user detail endpoint (edit/delete),
+        e.g. '/api/v1/accounts/admin/users/3/'."""
+        return '/' + APIPrefixes.ACCOUNTS + f'admin/users/{user_id}/'
+
+    @classmethod
+    def full_admin_user_ban_path(cls, user_id):
+        """Full path for the admin user ban/unban endpoint,
+        e.g. '/api/v1/accounts/admin/users/3/ban/'."""
+        return '/' + APIPrefixes.ACCOUNTS + f'admin/users/{user_id}/ban/'
 
 
 class CompanyEndpoints:

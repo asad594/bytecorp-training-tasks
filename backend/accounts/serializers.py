@@ -133,6 +133,8 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'years_of_experience',
             'created_at',
             'company',
+            'is_banned',
+            'banned_at',
         ]
         read_only_fields = [
             'user_id',
@@ -143,6 +145,8 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'years_of_experience',
             'created_at',
             'company',
+            'is_banned',
+            'banned_at',
         ]
 
     def get_company(self, obj):
@@ -160,6 +164,31 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'is_verified': company.is_verified,
             'member_role': membership.role,
         }
+
+
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    """
+    Used by an admin to edit another user's profile fields.
+    Deliberately excludes password, role, and bookkeeping fields —
+    role changes and password resets are handled by dedicated flows,
+    not this generic edit endpoint.
+    """
+
+    class Meta:
+        model = User
+        fields = ['name', 'email', 'bio', 'years_of_experience']
+
+    def validate_email(self, value):
+        value = value.strip().lower()
+        qs = User.objects.filter(email__iexact=value).exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError('A user with this email already exists.')
+        return value
+
+    def validate_years_of_experience(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError('Years of experience cannot be negative.')
+        return value
 
 
 # ---------------------------------------------------------------------------

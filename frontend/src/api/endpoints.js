@@ -46,6 +46,8 @@ export const SKILL_ENDPOINTS = {
 export const ADMIN_ENDPOINTS = {
   STATS: '/accounts/admin/stats/',
   USERS: (role) => (role ? `/accounts/admin/users/?role=${role}` : '/accounts/admin/users/'),
+  USER_DETAIL: (userId) => `/accounts/admin/users/${userId}/`,
+  USER_BAN: (userId) => `/accounts/admin/users/${userId}/ban/`,
 }
 
 

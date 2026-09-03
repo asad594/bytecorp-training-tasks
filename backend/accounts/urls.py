@@ -5,6 +5,7 @@ from accounts.views import (
     JobSeekerRegisterView, CompanyRepRegisterView,
     JobSeekerLoginView, CompanyRepLoginView, AdminLoginView,
     AdminCreateView, AdminStatsView, AdminUserListView,
+    AdminUserDetailView, AdminUserBanView,
     GoogleLoginView,
     ForgotPasswordView, ResetPasswordView,
 )
@@ -37,4 +38,6 @@ urlpatterns = [
     path(EP.ADMIN_CREATE, AdminCreateView.as_view(), name='admin-create'),
     path(EP.ADMIN_STATS, AdminStatsView.as_view(), name='admin-stats'),
     path(EP.ADMIN_USERS, AdminUserListView.as_view(), name='admin-users'),
+    path(EP.ADMIN_USER_DETAIL, AdminUserDetailView.as_view(), name='admin-user-detail'),
+    path(EP.ADMIN_USER_BAN, AdminUserBanView.as_view(), name='admin-user-ban'),
 ]

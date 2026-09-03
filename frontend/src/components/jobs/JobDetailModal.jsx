@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import Button from '../common/Button'
 
@@ -61,7 +62,11 @@ export default function JobDetailModal({
 
   const jobId = job.id || job.job_id
 
-  return (
+  // Portal straight into document.body — a `fixed` element gets trapped
+  // relative to any ancestor that has a `transform` applied (including one
+  // left behind by a `forwards`-filled CSS animation), so rendering in
+  // place inside the normal component tree isn't reliable here.
+  return createPortal(
     <div
       onClick={onClose}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md animate-fade-in-up"
@@ -188,6 +193,7 @@ export default function JobDetailModal({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
