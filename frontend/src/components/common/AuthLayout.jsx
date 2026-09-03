@@ -55,6 +55,32 @@ const jobCardsData = {
       rotate: -2,
     },
   ],
+  admin: [
+    {
+      title: 'Platform Overview',
+      company: '128 Active Users',
+      location: 'Live Monitoring',
+      salary: '12 Companies',
+      tags: ['Admin', 'Dashboard'],
+      rotate: -6,
+    },
+    {
+      title: 'Pending Verifications',
+      company: '5 Companies Awaiting Review',
+      location: 'Action Required',
+      salary: '3 Flagged Listings',
+      tags: ['Moderation', 'Review'],
+      rotate: 3,
+    },
+    {
+      title: 'Account Management',
+      company: 'Ban / Unban Controls',
+      location: 'Full Access',
+      salary: '452 Total Accounts',
+      tags: ['Security', 'Users'],
+      rotate: -2,
+    },
+  ],
 }
 
 export default function AuthLayout({

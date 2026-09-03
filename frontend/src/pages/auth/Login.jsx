@@ -48,8 +48,8 @@ const roleConfig = {
     showSocial: false,
     showRegister: false,
     registerHref: null,
-    showFloatingCards: false,
-    cardsVariant: 'jobs',
+    showFloatingCards: true,
+    cardsVariant: 'admin',
   },
 }
 
