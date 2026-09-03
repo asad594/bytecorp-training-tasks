@@ -118,7 +118,9 @@ class AdminUserSerializer(serializers.ModelSerializer):
     """
     Dedicated serializer for the admin user list endpoint.
     Includes created_at and exposes all fields as read-only.
+    For company_rep users, also includes the company they're associated with.
     """
+    company = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -130,6 +132,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'bio',
             'years_of_experience',
             'created_at',
+            'company',
         ]
         read_only_fields = [
             'user_id',
@@ -139,7 +142,24 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'bio',
             'years_of_experience',
             'created_at',
+            'company',
         ]
+
+    def get_company(self, obj):
+        if obj.role != 'company_rep':
+            return None
+
+        membership = obj.company_memberships.select_related('company').first()
+        if not membership:
+            return None
+
+        company = membership.company
+        return {
+            'company_id': company.company_id,
+            'name': company.name,
+            'is_verified': company.is_verified,
+            'member_role': membership.role,
+        }
 
 
 # ---------------------------------------------------------------------------

@@ -198,6 +198,21 @@ export default function AdminUsersTab() {
                             <p className="mt-0.5 text-xs font-mono text-cyan-accent">
                               {u.email}
                             </p>
+                            {u.role === 'company_rep' && (
+                              <p className="mt-1 text-xs text-text-secondary">
+                                Company:{' '}
+                                {u.company ? (
+                                  <span className="text-white font-medium">
+                                    {u.company.name}
+                                    {!u.company.is_verified && (
+                                      <span className="ml-1.5 text-amber-400 font-normal">(pending verification)</span>
+                                    )}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-500 italic">Not associated with any company</span>
+                                )}
+                              </p>
+                            )}
                             {u.bio && (
                               <p className="mt-2 text-xs text-text-card line-clamp-2 max-w-2xl leading-relaxed">
                                 {u.bio}
