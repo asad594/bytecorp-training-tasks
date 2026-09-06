@@ -41,6 +41,26 @@ def _log_structured_error(context, status_code, error_code, message, details=Non
     set_error_info(error_code, full_message)
 
 
+# Map known DB constraint names -> a friendly, specific message safe to show users.
+# Add an entry here any time a new UniqueConstraint / unique_together is added to a model.
+CONSTRAINT_MESSAGES = {
+    'unique_user_job_application': 'You have already applied to this job.',
+    'unique_company_member': 'This user is already a member of this company.',
+    'unique_skill_name': 'A skill with this name already exists.',
+}
+
+
+def _friendly_integrity_message(exc):
+    """Look up the constraint name inside the raw DB error and return a
+    specific, user-safe message if we recognize it. Falls back to a generic
+    message for constraints we haven't mapped yet."""
+    exc_text = str(exc)
+    for constraint_name, friendly_message in CONSTRAINT_MESSAGES.items():
+        if constraint_name in exc_text:
+            return friendly_message
+    return 'A database constraint was violated. Please check your input.'
+
+
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
@@ -86,7 +106,7 @@ def custom_exception_handler(exc, context):
                 'success': False,
                 'error': {
                     'code': 'DATABASE_ERROR',
-                    'message': 'A database constraint was violated. Please check your input.',
+                    'message': _friendly_integrity_message(exc),
                     'details': None,
                 }
             },
