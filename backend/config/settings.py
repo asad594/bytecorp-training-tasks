@@ -207,6 +207,18 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 
 # ---------------------------------------------------------------------------
+# Payload CMS media sync (best-effort mirror of applicant resumes)
+# ---------------------------------------------------------------------------
+
+# Base URL of the running Payload CMS instance (no trailing slash).
+PAYLOAD_API_BASE_URL = os.environ.get('PAYLOAD_API_BASE_URL', 'http://localhost:3000')
+# API key for a Payload user with API keys enabled (Users collection ->
+# edit a user -> "Enable API Key" -> generate). Leave unset to disable the
+# sync entirely (existing resume upload/download flow is unaffected either way).
+PAYLOAD_MEDIA_API_KEY = os.environ.get('PAYLOAD_MEDIA_API_KEY', '')
+
+
+# ---------------------------------------------------------------------------
 # Logging & Observability
 # ---------------------------------------------------------------------------
 

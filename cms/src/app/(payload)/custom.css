@@ -1,0 +1,48 @@
+/* Light visual polish for the Job Board admin panel — tightens up the
+   default Payload chrome without fighting its theme (uses Payload's own
+   CSS variables so it still respects light/dark mode). */
+
+.template-default .nav {
+  border-right: 1px solid var(--theme-elevation-150);
+}
+
+.nav__link,
+.nav-group__toggle {
+  border-radius: 6px;
+  transition: background-color 0.12s ease;
+}
+
+.step-nav {
+  font-size: 13px;
+}
+
+.doc-header {
+  border-bottom: 1px solid var(--theme-elevation-150);
+}
+
+.btn.btn--style-primary {
+  border-radius: 6px;
+}
+
+.btn.btn--style-secondary {
+  border-radius: 6px;
+}
+
+.card {
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--theme-elevation-150);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-elevation-250);
+}

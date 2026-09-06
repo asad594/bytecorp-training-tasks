@@ -9,6 +9,7 @@ from job_applications.serializers import (
     CompanyJobApplicationSerializer,
     ApplicationStatusUpdateSerializer,
 )
+from job_applications.payload_sync import sync_resume_to_payload_media
 from jobs.models import Job
 from companies.models import CompanyMember
 
@@ -47,9 +48,16 @@ class JobApplicationListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        if request.user.role == 'admin':
+            applications = JobApplication.objects.filter(
+                deleted_at__isnull=True
+            ).select_related('user', 'job').order_by('application_id')
+            serializer = CompanyJobApplicationSerializer(applications, many=True, context={'request': request})
+            return Response(serializer.data)
+
         applications = JobApplication.objects.filter(
             user=request.user, deleted_at__isnull=True
-        )
+        ).order_by('application_id')
         serializer = JobApplicationSerializer(applications, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -73,7 +81,8 @@ class JobApplicationListCreateView(APIView):
 
         serializer = JobApplicationSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user, updated_by=request.user, status='pending')
+        application = serializer.save(user=request.user, updated_by=request.user, status='pending')
+        sync_resume_to_payload_media(application)
         return Response(serializer.data, status=201)
 
 

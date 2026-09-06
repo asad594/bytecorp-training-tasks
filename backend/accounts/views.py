@@ -201,7 +201,7 @@ class AdminUserListView(APIView):
             raise PermissionDenied('Only an admin can view user accounts.')
 
         role = request.query_params.get('role')
-        queryset = User.objects.filter(deleted_at__isnull=True).prefetch_related(
+        queryset = User.objects.filter(deleted_at__isnull=True).order_by('user_id').prefetch_related(
             'company_memberships__company'
         )
         if role:

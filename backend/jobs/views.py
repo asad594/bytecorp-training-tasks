@@ -14,9 +14,9 @@ class JobListCreateView(APIView):
     def get(self, request):
         company_id = request.query_params.get('company')
         if company_id:
-            jobs = Job.objects.filter(company_id=company_id, deleted_at__isnull=True)
+            jobs = Job.objects.filter(company_id=company_id, deleted_at__isnull=True).order_by('job_id')
         else:
-            jobs = Job.objects.filter(deleted_at__isnull=True)
+            jobs = Job.objects.filter(deleted_at__isnull=True).order_by('job_id')
         serializer = JobSerializer(jobs, many=True)
         return Response(serializer.data)
 
@@ -64,9 +64,11 @@ class JobDetailView(APIView):
 
     def put(self, request, pk):
         job = self.get_object(pk)
-        if request.user.role != 'company_rep':
+        if request.user.role == 'admin':
+            pass
+        elif request.user.role != 'company_rep':
             raise PermissionDenied('Only company representatives can update jobs.')
-        if not self.is_member(request.user, job.company):
+        elif not self.is_member(request.user, job.company):
             raise PermissionDenied('You can only update jobs for your own company.')
 
         serializer = JobSerializer(job, data=request.data, partial=False)
@@ -76,9 +78,11 @@ class JobDetailView(APIView):
 
     def patch(self, request, pk):
         job = self.get_object(pk)
-        if request.user.role != 'company_rep':
+        if request.user.role == 'admin':
+            pass
+        elif request.user.role != 'company_rep':
             raise PermissionDenied('Only company representatives can update jobs.')
-        if not self.is_member(request.user, job.company):
+        elif not self.is_member(request.user, job.company):
             raise PermissionDenied('You can only update jobs for your own company.')
 
         serializer = JobSerializer(job, data=request.data, partial=True)
@@ -88,9 +92,11 @@ class JobDetailView(APIView):
 
     def delete(self, request, pk):
         job = self.get_object(pk)
-        if request.user.role != 'company_rep':
+        if request.user.role == 'admin':
+            pass
+        elif request.user.role != 'company_rep':
             raise PermissionDenied('Only company representatives can delete jobs.')
-        if not self.is_member(request.user, job.company):
+        elif not self.is_member(request.user, job.company):
             raise PermissionDenied('You can only delete jobs for your own company.')
 
         job.deleted_at = datetime.datetime.now()

@@ -28,7 +28,7 @@ class CompanyListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        companies = Company.objects.filter(deleted_at__isnull=True)
+        companies = Company.objects.filter(deleted_at__isnull=True).order_by('company_id')
         serializer = CompanySerializer(companies, many=True)
         return Response(serializer.data)
 

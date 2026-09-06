@@ -11,7 +11,7 @@ class SkillListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        skills = Skill.objects.filter(deleted_at__isnull=True)
+        skills = Skill.objects.filter(deleted_at__isnull=True).order_by('skill_id')
         serializer = SkillSerializer(skills, many=True)
         return Response(serializer.data)
 
