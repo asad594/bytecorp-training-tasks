@@ -1,3 +1,4 @@
+import LegalPage from '../pages/legal/LegalPage'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import LandingPage from '../pages/LandingPage'
 import Login from '../pages/auth/Login'
@@ -28,6 +29,7 @@ export default function AppRoutes() {
       <Route path="/register/:role" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/legal/:docType/:role" element={<LegalPage />} />
 
       {/* Protected Routes Wired with ProtectedRoute */}
       <Route

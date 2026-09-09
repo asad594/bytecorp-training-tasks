@@ -31,6 +31,22 @@ const roleConfig = {
   },
 }
 
+// Static class maps (never build Tailwind class names dynamically with template
+// strings — the JIT compiler only picks up classes it can see literally in source).
+const strengthColorClasses = {
+  weak: { bar: 'bg-rose-400', text: 'text-rose-400' },
+  medium: { bar: 'bg-amber-400', text: 'text-amber-400' },
+  strong: { bar: 'bg-gradient-to-r from-cyan-400 to-indigo-400', text: 'text-cyan-300' },
+}
+
+const strengthCriteria = [
+  { key: 'length', label: '8+ Chars', test: (v) => v.length >= 8 },
+  { key: 'uppercase', label: 'Uppercase', test: (v) => /[A-Z]/.test(v) },
+  { key: 'lowercase', label: 'Lowercase', test: (v) => /[a-z]/.test(v) },
+  { key: 'number', label: 'Number', test: (v) => /[0-9]/.test(v) },
+  { key: 'symbol', label: 'Symbol', test: (v) => /[^A-Za-z0-9]/.test(v) },
+]
+
 export default function Register() {
   const { role = 'job_seeker' } = useParams()
   const navigate = useNavigate()
@@ -82,6 +98,19 @@ export default function Register() {
       }
     },
   })
+
+  // Real-time password strength (derived on every render — no extra effect needed)
+  const passwordValue = formik.values.password || ''
+  const passedChecks = strengthCriteria.filter((c) => c.test(passwordValue))
+  const strengthScore = passedChecks.length
+  const strengthTier =
+    strengthScore <= 2 ? 'weak' : strengthScore <= 4 ? 'medium' : 'strong'
+  const strengthLabel =
+    strengthScore <= 2 ? 'Weak' : strengthScore <= 4 ? 'Medium' : 'Strong'
+
+  const confirmPasswordValue = formik.values.confirmPassword || ''
+  const passwordsMatch =
+    confirmPasswordValue.length > 0 && passwordValue === confirmPasswordValue
 
   return (
     <AuthLayout
@@ -228,6 +257,37 @@ export default function Register() {
             </button>
           </div>
 
+          {/* Real-Time Password Strength Meter */}
+          {passwordValue.length > 0 && (
+            <div className="-mt-2 rounded-xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md">
+              <div className="mb-2 flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-300">Password Strength</span>
+                <span className={`font-bold ${strengthColorClasses[strengthTier].text}`}>
+                  {strengthLabel}
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${strengthColorClasses[strengthTier].bar}`}
+                  style={{ width: `${(strengthScore / strengthCriteria.length) * 100}%` }}
+                />
+              </div>
+              <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[0.7rem]">
+                {strengthCriteria.map((c) => {
+                  const passed = c.test(passwordValue)
+                  return (
+                    <span
+                      key={c.key}
+                      className={`transition-colors ${passed ? 'text-cyan-300' : 'text-slate-500'}`}
+                    >
+                      {passed ? '✓' : '○'} {c.label}
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Confirm Password with field-specific error from Formik */}
           <Input
             label="Confirm Password"
@@ -244,6 +304,17 @@ export default function Register() {
             placeholder="Re-enter your password"
           />
 
+          {/* Real-Time Password Match Indicator */}
+          {confirmPasswordValue.length > 0 && (
+            <p
+              className={`-mt-2 flex items-center gap-1.5 text-[0.7rem] font-medium ${
+                passwordsMatch ? 'text-cyan-300' : 'text-rose-400'
+              }`}
+            >
+              {passwordsMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
+            </p>
+          )}
+
           {/* Terms checkbox */}
           <div className="mt-1">
             <label className="flex items-start gap-2.5 cursor-pointer text-[0.78rem] text-text-desc">
@@ -258,7 +329,27 @@ export default function Register() {
                 className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 accent-cyan-400"
               />
               <span>
-                I agree to the <span className="text-cyan-400 hover:underline">Terms of Service</span> and <span className="text-cyan-400 hover:underline">Privacy Policy</span>.
+                I agree to the{' '}
+                <Link
+                  to={`/legal/terms/${currentRole}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link
+                  to={`/legal/privacy/${currentRole}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Privacy Policy
+                </Link>
+                .
               </span>
             </label>
           </div>
