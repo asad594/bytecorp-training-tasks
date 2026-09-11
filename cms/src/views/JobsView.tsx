@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ResourceTable } from '@/components/ResourceTable'
+import { ResourceTable, Badge } from '@/components/ResourceTable'
 
 type Job = {
   job_id: number
@@ -16,14 +16,15 @@ export function JobsView() {
   return (
     <ResourceTable<Job>
       title="Jobs"
+      titleIcon="💼"
       endpoint="jobs"
       getId={(j) => j.job_id}
       columns={[
-        { label: 'Title', render: (j) => j.title },
-        { label: 'Company ID', render: (j) => j.company },
-        { label: 'Location', render: (j) => j.location || '—' },
-        { label: 'Type', render: (j) => j.employment_type },
-        { label: 'Status', render: (j) => j.status },
+        { label: 'Title', render: (j) => j.title, sortValue: (j) => j.title.toLowerCase() },
+        { label: 'Company ID', render: (j) => j.company, sortValue: (j) => j.company },
+        { label: 'Location', render: (j) => j.location || '—', sortValue: (j) => (j.location || '').toLowerCase() },
+        { label: 'Type', render: (j) => j.employment_type, sortValue: (j) => j.employment_type },
+        { label: 'Status', render: (j) => <Badge text={j.status} />, sortValue: (j) => j.status },
       ]}
       actions={[
         {

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ResourceTable } from '@/components/ResourceTable'
+import { ResourceTable, Badge } from '@/components/ResourceTable'
 
 type JobBoardUser = {
   user_id: number
@@ -15,13 +15,18 @@ export function UsersView() {
   return (
     <ResourceTable<JobBoardUser>
       title="Users"
+      titleIcon="👤"
       endpoint="accounts/admin/users"
       getId={(u) => u.user_id}
       columns={[
-        { label: 'Name', render: (u) => u.name },
-        { label: 'Email', render: (u) => u.email },
-        { label: 'Role', render: (u) => u.role },
-        { label: 'Status', render: (u) => (u.is_banned ? 'Banned' : 'Active') },
+        { label: 'Name', render: (u) => u.name, sortValue: (u) => u.name.toLowerCase() },
+        { label: 'Email', render: (u) => u.email, sortValue: (u) => u.email.toLowerCase() },
+        { label: 'Role', render: (u) => u.role, sortValue: (u) => u.role },
+        {
+          label: 'Status',
+          render: (u) => <Badge text={u.is_banned ? 'Banned' : 'Active'} />,
+          sortValue: (u) => (u.is_banned ? 1 : 0),
+        },
       ]}
       actions={[
         {

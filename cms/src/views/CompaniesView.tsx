@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ResourceTable } from '@/components/ResourceTable'
+import { ResourceTable, Badge } from '@/components/ResourceTable'
 
 type Company = {
   company_id: number
@@ -15,13 +15,22 @@ export function CompaniesView() {
   return (
     <ResourceTable<Company>
       title="Companies"
+      titleIcon="🏢"
       endpoint="companies"
       getId={(c) => c.company_id}
       columns={[
-        { label: 'Name', render: (c) => c.name },
-        { label: 'Registration #', render: (c) => c.registration_number || '—' },
-        { label: 'Location', render: (c) => c.location || '—' },
-        { label: 'Verified', render: (c) => (c.is_verified ? 'Yes' : 'Pending') },
+        { label: 'Name', render: (c) => c.name, sortValue: (c) => c.name.toLowerCase() },
+        {
+          label: 'Registration #',
+          render: (c) => c.registration_number || '—',
+          sortValue: (c) => (c.registration_number || '').toLowerCase(),
+        },
+        { label: 'Location', render: (c) => c.location || '—', sortValue: (c) => (c.location || '').toLowerCase() },
+        {
+          label: 'Verified',
+          render: (c) => <Badge text={c.is_verified ? 'Verified' : 'Pending'} />,
+          sortValue: (c) => (c.is_verified ? 1 : 0),
+        },
       ]}
       actions={[
         {

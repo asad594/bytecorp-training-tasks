@@ -12,6 +12,10 @@
   transition: background-color 0.12s ease;
 }
 
+.nav__link:hover {
+  background: var(--theme-elevation-100);
+}
+
 .step-nav {
   font-size: 13px;
 }

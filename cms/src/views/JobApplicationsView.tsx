@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ResourceTable } from '@/components/ResourceTable'
+import { ResourceTable, Badge } from '@/components/ResourceTable'
 
 type JobApplication = {
   application_id: number
@@ -17,13 +17,22 @@ export function JobApplicationsView() {
   return (
     <ResourceTable<JobApplication>
       title="Job Applications"
+      titleIcon="🧾"
       endpoint="job-applications"
       getId={(a) => a.application_id}
       columns={[
-        { label: 'Applicant', render: (a) => a.applicant_name || '—' },
-        { label: 'Email', render: (a) => a.applicant_email || '—' },
-        { label: 'Job', render: (a) => a.job_title || '—' },
-        { label: 'Status', render: (a) => a.status },
+        {
+          label: 'Applicant',
+          render: (a) => a.applicant_name || '—',
+          sortValue: (a) => (a.applicant_name || '').toLowerCase(),
+        },
+        {
+          label: 'Email',
+          render: (a) => a.applicant_email || '—',
+          sortValue: (a) => (a.applicant_email || '').toLowerCase(),
+        },
+        { label: 'Job', render: (a) => a.job_title || '—', sortValue: (a) => (a.job_title || '').toLowerCase() },
+        { label: 'Status', render: (a) => <Badge text={a.status} />, sortValue: (a) => a.status },
         {
           label: 'Resume',
           render: (a) =>
@@ -38,6 +47,7 @@ export function JobApplicationsView() {
         {
           label: 'Applied',
           render: (a) => (a.created_at ? new Date(a.created_at).toLocaleDateString() : '—'),
+          sortValue: (a) => (a.created_at ? new Date(a.created_at).getTime() : 0),
         },
       ]}
       actions={[

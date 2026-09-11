@@ -14,7 +14,9 @@ async function requireCmsUser(req: NextRequest) {
 }
 
 async function forward(req: NextRequest, path: string[], body?: string) {
+  const t0 = Date.now()
   const user = await requireCmsUser(req)
+  const t1 = Date.now()
   if (!user) {
     return NextResponse.json({ detail: 'Not authenticated' }, { status: 401 })
   }
@@ -35,7 +37,9 @@ async function forward(req: NextRequest, path: string[], body?: string) {
     })
 
   let token = await getDjangoAdminToken()
+  const t2 = Date.now()
   let res = await doFetch(token)
+  const t3 = Date.now()
 
   if (res.status === 401) {
     invalidateDjangoToken()
@@ -44,6 +48,13 @@ async function forward(req: NextRequest, path: string[], body?: string) {
   }
 
   const text = await res.text()
+  const t4 = Date.now()
+  // eslint-disable-next-line no-console
+  console.log(
+    `[django-proxy] ${req.method} ${targetPath} — payload-auth: ${t1 - t0}ms, ` +
+      `django-token: ${t2 - t1}ms, django-fetch: ${t3 - t2}ms, body-read: ${t4 - t3}ms, ` +
+      `TOTAL: ${t4 - t0}ms`,
+  )
   // A 204/205/304 response must not have a body — constructing a Response
   // with one throws ("Invalid response status code"). Django's DELETE
   // endpoints return 204 with an empty body, so drop the body for those.

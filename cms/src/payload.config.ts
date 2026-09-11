@@ -18,6 +18,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
     components: {
+      actions: ['/components/LogoutAction/index.js#LogoutAction'],
       afterNavLinks: ['/components/AfterNavLinks/index.js#AfterNavLinks'],
       views: {
         JobBoardJobs: {
