@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { SpinnerIcon } from '@/assets/icons'
 import Button from '../../components/common/Button'
 import Badge from '../../components/common/Badge'
-import { getPendingCompanies, getCompanies, verifyCompany } from '../../api/companiesApi'
+import { getPendingCompanies, getCompanies, verifyCompany, banCompany } from '../../api/companiesApi'
 
 export default function AdminCompaniesTab() {
   const [activeView, setActiveView] = useState('pending') // 'pending' | 'all'
@@ -12,6 +12,7 @@ export default function AdminCompaniesTab() {
   const [error, setError] = useState(null)
   const [actionBusyId, setActionBusyId] = useState(null)
   const [confirmingRevokeId, setConfirmingRevokeId] = useState(null)
+  const [confirmingBanId, setConfirmingBanId] = useState(null)
   const [successMessage, setSuccessMessage] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -90,6 +91,34 @@ export default function AdminCompaniesTab() {
     }
   }
 
+  const handleToggleBan = async (companyId, companyName, nextIsBanned) => {
+    try {
+      setActionBusyId(companyId)
+      setError(null)
+      setSuccessMessage(null)
+      await banCompany(companyId, nextIsBanned)
+      setSuccessMessage(
+        `Company "${companyName}" was ${nextIsBanned ? 'banned' : 'unbanned'} successfully!`
+      )
+      // Update local states
+      setPendingCompanies((prev) =>
+        prev.map((c) => (c.company_id === companyId ? { ...c, is_banned: nextIsBanned } : c))
+      )
+      setAllCompanies((prev) =>
+        prev.map((c) => (c.company_id === companyId ? { ...c, is_banned: nextIsBanned } : c))
+      )
+    } catch (err) {
+      const msg =
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        'Failed to update company ban status.'
+      setError(msg)
+    } finally {
+      setActionBusyId(null)
+      setConfirmingBanId(null)
+    }
+  }
+
   const currentList = activeView === 'pending' ? pendingCompanies : allCompanies
   const filteredList = currentList.filter((company) => {
     if (!searchQuery.trim()) return true
@@ -134,6 +163,7 @@ export default function AdminCompaniesTab() {
             onClick={() => {
               setActiveView('pending')
               setConfirmingRevokeId(null)
+              setConfirmingBanId(null)
             }}
             className={`rounded-lg px-4 py-2 text-xs font-semibold transition cursor-pointer flex items-center gap-2 ${
               activeView === 'pending'
@@ -152,6 +182,7 @@ export default function AdminCompaniesTab() {
             onClick={() => {
               setActiveView('all')
               setConfirmingRevokeId(null)
+              setConfirmingBanId(null)
             }}
             className={`rounded-lg px-4 py-2 text-xs font-semibold transition cursor-pointer flex items-center gap-2 ${
               activeView === 'all'
@@ -289,6 +320,11 @@ export default function AdminCompaniesTab() {
                                   Pending Approval ⏳
                                 </Badge>
                               )}
+                              {company.is_banned && (
+                                <Badge variant="rose" size="sm">
+                                  Banned 🚫
+                                </Badge>
+                              )}
                             </div>
                             <p className="mt-1 text-xs text-text-secondary">
                               Reg #: <span className="font-mono text-white">{company.registration_number}</span> ·{' '}
@@ -381,6 +417,53 @@ export default function AdminCompaniesTab() {
                             </button>
                           )}
 
+                          {/* Ban / Unban Control */}
+                          {confirmingBanId === company.company_id ? (
+                            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+                              <span className="text-[11px] text-amber-300 font-medium whitespace-nowrap">
+                                Ban company?
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  disabled={isActionBusy}
+                                  onClick={() => {
+                                    setConfirmingBanId(null)
+                                    handleToggleBan(company.company_id, company.name, true)
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-500 text-white hover:bg-rose-600 transition cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                                >
+                                  {isActionBusy ? 'Banning...' : 'Confirm Ban'}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isActionBusy}
+                                  onClick={() => setConfirmingBanId(null)}
+                                  className="px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 transition cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : company.is_banned ? (
+                            <button
+                              type="button"
+                              disabled={isActionBusy}
+                              onClick={() => handleToggleBan(company.company_id, company.name, false)}
+                              className="px-3 py-1.5 rounded-lg text-[11px] font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-500/50 transition cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                            >
+                              {isActionBusy ? 'Unbanning...' : 'Unban Company'}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={isActionBusy}
+                              onClick={() => setConfirmingBanId(company.company_id)}
+                              className="px-3 py-1.5 rounded-lg text-[11px] font-medium border border-rose-500/20 bg-white/[0.02] text-slate-400 hover:text-rose-300 hover:border-rose-500/40 hover:bg-rose-500/5 transition cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                            >
+                              Ban Company
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

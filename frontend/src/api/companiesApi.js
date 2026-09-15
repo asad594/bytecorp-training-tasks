@@ -40,3 +40,10 @@ export const verifyCompany = async (id, isVerified = true) => {
   })
   return response.data
 }
+
+export const banCompany = async (id, isBanned = true) => {
+  const response = await axiosInstance.patch(COMPANY_ENDPOINTS.BAN(id), {
+    is_banned: isBanned,
+  })
+  return response.data
+}

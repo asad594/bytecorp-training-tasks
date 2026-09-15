@@ -21,6 +21,7 @@ export const COMPANY_ENDPOINTS = {
   JOIN: '/companies/join/',
   PENDING: '/companies/pending/',
   VERIFY: (id) => `/companies/${id}/verify/`,
+  BAN: (id) => `/companies/${id}/ban/`,
   DETAIL: (id) => `/companies/${id}/`,
 }
 
