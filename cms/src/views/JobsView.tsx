@@ -26,6 +26,32 @@ export function JobsView() {
         { label: 'Type', render: (j) => j.employment_type, sortValue: (j) => j.employment_type },
         { label: 'Status', render: (j) => <Badge text={j.status} />, sortValue: (j) => j.status },
       ]}
+      editFields={[
+        { name: 'title', label: 'Title', type: 'text', required: true, getValue: (j) => j.title },
+        { name: 'location', label: 'Location', type: 'text', getValue: (j) => j.location ?? '' },
+        {
+          name: 'employment_type',
+          label: 'Employment Type',
+          type: 'select',
+          options: [
+            { label: 'Full Time', value: 'full-time' },
+            { label: 'Part Time', value: 'part-time' },
+            { label: 'Contract', value: 'contract' },
+          ],
+          getValue: (j) => j.employment_type,
+        },
+        {
+          name: 'status',
+          label: 'Status',
+          type: 'select',
+          options: [
+            { label: 'Open', value: 'open' },
+            { label: 'Closed', value: 'closed' },
+            { label: 'Draft', value: 'draft' },
+          ],
+          getValue: (j) => j.status,
+        },
+      ]}
       actions={[
         {
           label: (j) => (j.status === 'closed' ? 'Reopen' : 'Close'),

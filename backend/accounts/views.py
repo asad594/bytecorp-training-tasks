@@ -106,6 +106,17 @@ class JobSeekerLoginSerializer(RoleTokenObtainPairSerializer):
 class CompanyRepLoginSerializer(RoleTokenObtainPairSerializer):
     allowed_role = 'company_rep'
 
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        membership = self.user.company_memberships.select_related('company').first()
+        if membership and membership.company and membership.company.is_banned:
+            raise PermissionDenied(
+                'Your company has been banned. Contact support for more information.'
+            )
+
+        return data
+
 
 class AdminLoginSerializer(RoleTokenObtainPairSerializer):
     allowed_role = 'admin'

@@ -28,6 +28,21 @@ export function UsersView() {
           sortValue: (u) => (u.is_banned ? 1 : 0),
         },
       ]}
+      editFields={[
+        { name: 'name', label: 'Name', type: 'text', required: true, getValue: (u) => u.name },
+        { name: 'email', label: 'Email', type: 'text', required: true, getValue: (u) => u.email },
+        {
+          name: 'role',
+          label: 'Role',
+          type: 'select',
+          options: [
+            { label: 'Job Seeker', value: 'job_seeker' },
+            { label: 'Company Representative', value: 'company_rep' },
+            { label: 'Admin', value: 'admin' },
+          ],
+          getValue: (u) => u.role,
+        },
+      ]}
       actions={[
         {
           label: (u) => (u.is_banned ? 'Unban' : 'Ban'),

@@ -80,6 +80,7 @@ export function SkillsView() {
         </div>
       }
       columns={[{ label: 'Name', render: (s) => s.name, sortValue: (s) => s.name.toLowerCase() }]}
+      editFields={[{ name: 'name', label: 'Name', type: 'text', required: true, getValue: (s) => s.name }]}
       actions={[
         {
           label: () => 'Delete',

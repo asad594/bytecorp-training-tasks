@@ -1,10 +1,10 @@
-﻿from django.db import transaction
+from django.db import transaction
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from companies.models import Company, CompanyMember
-from companies.serializers import CompanySerializer, CompanyVerifySerializer
+from companies.serializers import CompanySerializer, CompanyVerifySerializer, CompanyBanSerializer
 
 
 class MyCompanyView(APIView):
@@ -166,6 +166,30 @@ class CompanyVerifyView(APIView):
         serializer.is_valid(raise_exception=True)
 
         company.is_verified = serializer.validated_data.get('is_verified', True)
+        company.updated_by = request.user
+        company.save()
+
+        return Response(CompanySerializer(company).data)
+
+
+class CompanyBanView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return Company.objects.get(pk=pk, deleted_at__isnull=True)
+        except Company.DoesNotExist:
+            raise NotFound('Company not found.')
+
+    def patch(self, request, pk):
+        if request.user.role != 'admin':
+            raise PermissionDenied('Only admins can ban or unban companies.')
+
+        company = self.get_object(pk)
+        serializer = CompanyBanSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        company.is_banned = serializer.validated_data.get('is_banned', True)
         company.updated_by = request.user
         company.save()
 

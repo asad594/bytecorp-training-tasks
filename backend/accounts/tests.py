@@ -3,6 +3,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from accounts.models import User
 from skills.models import Skill
+from companies.models import Company, CompanyMember
 
 
 class SkillsApiTests(TestCase):
@@ -172,3 +173,132 @@ class SkillsApiTests(TestCase):
         # Recreating the same 50-char skill name succeeds
         res2 = self.client.post('/api/v1/skills/', {'name': max_len_name}, format='json')
         self.assertEqual(res2.status_code, status.HTTP_201_CREATED)
+
+
+class CompanyRepLoginBanTests(TestCase):
+    databases = {'default', 'logs_db'}
+
+    def setUp(self):
+        self.client = APIClient()
+
+        # Unbanned company and rep
+        self.active_company = Company.objects.create(
+            name='Good Co',
+            registration_number='REG-GOOD-01',
+            is_banned=False,
+            is_verified=True
+        )
+        self.active_rep = User.objects.create_user(
+            email='active_rep@example.com',
+            password='RepPassword123!',
+            name='Active Rep',
+            role='company_rep'
+        )
+        CompanyMember.objects.create(
+            user=self.active_rep,
+            company=self.active_company,
+            role='owner'
+        )
+
+        # Banned company and rep
+        self.banned_company = Company.objects.create(
+            name='Bad Co',
+            registration_number='REG-BAD-01',
+            is_banned=True,
+            is_verified=True
+        )
+        self.banned_rep = User.objects.create_user(
+            email='banned_rep@example.com',
+            password='RepPassword123!',
+            name='Banned Rep',
+            role='company_rep'
+        )
+        CompanyMember.objects.create(
+            user=self.banned_rep,
+            company=self.banned_company,
+            role='owner'
+        )
+
+        # Rep without company
+        self.unaffiliated_rep = User.objects.create_user(
+            email='unaffiliated_rep@example.com',
+            password='RepPassword123!',
+            name='Unaffiliated Rep',
+            role='company_rep'
+        )
+
+        # Job seeker & admin
+        self.job_seeker = User.objects.create_user(
+            email='seeker_login@example.com',
+            password='SeekerPassword123!',
+            name='Seeker Login',
+            role='job_seeker'
+        )
+        self.admin = User.objects.create_user(
+            email='admin_login@example.com',
+            password='AdminPassword123!',
+            name='Admin Login',
+            role='admin'
+        )
+
+    def test_banned_company_rep_login_rejected_with_403(self):
+        url = '/api/v1/accounts/login/company_rep/'
+        response = self.client.post(url, {
+            'email': 'banned_rep@example.com',
+            'password': 'RepPassword123!'
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('Your company has been banned. Contact support for more information.', str(response.data))
+        self.assertNotIn('access', response.data)
+        self.assertNotIn('refresh', response.data)
+
+    def test_unbanned_company_rep_login_succeeds(self):
+        url = '/api/v1/accounts/login/company_rep/'
+        response = self.client.post(url, {
+            'email': 'active_rep@example.com',
+            'password': 'RepPassword123!'
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+
+    def test_company_rep_without_company_login_succeeds(self):
+        url = '/api/v1/accounts/login/company_rep/'
+        response = self.client.post(url, {
+            'email': 'unaffiliated_rep@example.com',
+            'password': 'RepPassword123!'
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+
+    def test_banned_company_rep_wrong_password_gets_invalid_credentials(self):
+        """Wrong password at a banned company gets standard 401 error, not the ban message."""
+        url = '/api/v1/accounts/login/company_rep/'
+        response = self.client.post(url, {
+            'email': 'banned_rep@example.com',
+            'password': 'WrongPassword999!'
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertNotIn('Your company has been banned', str(response.data))
+
+    def test_job_seeker_and_admin_logins_unaffected(self):
+        # Job seeker login
+        res_seeker = self.client.post('/api/v1/accounts/login/job_seeker/', {
+            'email': 'seeker_login@example.com',
+            'password': 'SeekerPassword123!'
+        }, format='json')
+        self.assertEqual(res_seeker.status_code, status.HTTP_200_OK)
+        self.assertIn('access', res_seeker.data)
+
+        # Admin login
+        res_admin = self.client.post('/api/v1/accounts/login/admin/', {
+            'email': 'admin_login@example.com',
+            'password': 'AdminPassword123!'
+        }, format='json')
+        self.assertEqual(res_admin.status_code, status.HTTP_200_OK)
+        self.assertIn('access', res_admin.data)

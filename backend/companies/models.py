@@ -10,6 +10,7 @@ class Company(models.Model):
     website = models.CharField(max_length=120, blank=True, null=True)
     location = models.CharField(max_length=100, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    is_banned = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     updated_by = models.ForeignKey(

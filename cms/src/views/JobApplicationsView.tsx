@@ -50,6 +50,20 @@ export function JobApplicationsView() {
           sortValue: (a) => (a.created_at ? new Date(a.created_at).getTime() : 0),
         },
       ]}
+      editFields={[
+        {
+          name: 'status',
+          label: 'Status',
+          type: 'select',
+          options: [
+            { label: 'Pending', value: 'pending' },
+            { label: 'Reviewed', value: 'reviewed' },
+            { label: 'Shortlisted', value: 'shortlisted' },
+            { label: 'Rejected', value: 'rejected' },
+          ],
+          getValue: (a) => a.status,
+        },
+      ]}
       actions={[
         {
           label: () => 'Delete',

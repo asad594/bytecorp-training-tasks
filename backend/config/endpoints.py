@@ -92,6 +92,7 @@ class CompanyEndpoints:
     JOIN = 'join/'
     PENDING = 'pending/'
     VERIFY = '<int:pk>/verify/'
+    BAN = '<int:pk>/ban/'
     DETAIL = '<int:pk>/'
 
     @classmethod
@@ -112,6 +113,13 @@ class CompanyEndpoints:
         real pk substituted in place of the '<int:pk>/' route converter, for use
         with the Django test client), e.g. '/api/v1/companies/5/verify/'."""
         return '/' + APIPrefixes.COMPANIES + f'{pk}/verify/'
+
+    @classmethod
+    def full_ban_path(cls, pk):
+        """Full path for the admin company-ban endpoint (leading slash, with a
+        real pk substituted in place of the '<int:pk>/' route converter, for use
+        with the Django test client), e.g. '/api/v1/companies/5/ban/'."""
+        return '/' + APIPrefixes.COMPANIES + f'{pk}/ban/'
 
 
 class JobEndpoints:

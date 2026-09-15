@@ -9,6 +9,7 @@ type Company = {
   registration_number: string | null
   location: string | null
   is_verified: boolean
+  is_banned: boolean
 }
 
 export function CompaniesView() {
@@ -31,6 +32,11 @@ export function CompaniesView() {
           render: (c) => <Badge text={c.is_verified ? 'Verified' : 'Pending'} />,
           sortValue: (c) => (c.is_verified ? 1 : 0),
         },
+        {
+          label: 'Status',
+          render: (c) => <Badge text={c.is_banned ? 'Banned' : 'Active'} />,
+          sortValue: (c) => (c.is_banned ? 1 : 0),
+        },
       ]}
       actions={[
         {
@@ -39,6 +45,17 @@ export function CompaniesView() {
             const res = await fetch(`/api/django-proxy/companies/${c.company_id}/verify`, {
               method: 'PATCH',
               body: JSON.stringify({ is_verified: !c.is_verified }),
+            })
+            return res.ok
+          },
+        },
+        {
+          label: (c) => (c.is_banned ? 'Unban' : 'Ban'),
+          confirm: 'Are you sure?',
+          onClick: async (c) => {
+            const res = await fetch(`/api/django-proxy/companies/${c.company_id}/ban`, {
+              method: 'PATCH',
+              body: JSON.stringify({ is_banned: !c.is_banned }),
             })
             return res.ok
           },

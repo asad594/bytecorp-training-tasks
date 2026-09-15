@@ -55,12 +55,18 @@ class CompanySerializer(serializers.ModelSerializer):
             'website',
             'location',
             'is_verified',
+            'is_banned',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['company_id', 'created_at', 'updated_at', 'is_verified']
+        read_only_fields = ['company_id', 'created_at', 'updated_at', 'is_verified', 'is_banned']
 
 
 class CompanyVerifySerializer(serializers.Serializer):
     """Used by admins to approve/reject a pending company registration."""
     is_verified = serializers.BooleanField(required=False, default=True)
+
+
+class CompanyBanSerializer(serializers.Serializer):
+    """Used by admins to ban/unban a company."""
+    is_banned = serializers.BooleanField(required=False, default=True)
