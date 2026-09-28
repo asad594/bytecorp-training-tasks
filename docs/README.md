@@ -22,8 +22,5 @@ This documentation suite provides architectural guides, API catalogs, database s
 ## 🎨 Media & Diagram Assets
 
 All diagram assets and graphics are stored in [`docs/assets/`](assets/):
-- **`hero-banner.jpg`** — Modern platform dashboard overview
-- **`architecture.svg`** — High-level fullstack system architecture diagram
-- **`process_flow.svg`** — Candidate job discovery & application lifecycle
-- **`swimlane.svg`** — Multi-actor swimlane workflow diagram
+- **`jobboard-banner.png`** — ByteCorp Job Board platform preview
 - **`erd.png`** — Entity-Relationship Diagram for PostgreSQL data store

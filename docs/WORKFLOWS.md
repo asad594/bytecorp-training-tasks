@@ -6,7 +6,16 @@ This document outlines the end-to-end user journeys, status transition rules, an
 
 ## 🔄 Job Application Lifecycle
 
-![Application Process Flow](assets/process_flow.svg)
+```mermaid
+graph LR
+    A[Browse & Filter Jobs] --> B[Submit Application + CV]
+    B --> C[Status: pending]
+    C --> D[Recruiter Screening]
+    D --> E[Status: reviewed]
+    E --> F{Evaluation}
+    F -->|Interview Invite| G[Status: shortlisted]
+    F -->|Not Selected| H[Status: rejected]
+```
 
 ### State Machine Transition Rules
 
@@ -28,8 +37,6 @@ The application status follows a strict finite-state progression:
 ---
 
 ## 🏊 Multi-Role Operational Swimlane
-
-![Role-Based Swimlane](assets/swimlane.svg)
 
 ### Role Responsibilities & Boundary Matrix
 

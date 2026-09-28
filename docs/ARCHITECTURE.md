@@ -6,7 +6,30 @@ The **ByteCorp Job Board Platform** is engineered as a decoupled, multi-tier ful
 
 ## 🏛 High-Level Architecture Diagram
 
-![System Architecture](assets/architecture.svg)
+```mermaid
+graph TD
+    subgraph Tier1 [Tier 1: Presentation & Interfaces]
+        Frontend["Job Board Web Portal\n(React 19 • Vite 8 • Tailwind CSS v4)"]
+        CMS["Headless CMS Admin\n(Payload CMS 3 • Next.js 16 • TypeScript)"]
+    end
+
+    subgraph Tier2 [Tier 2: API & Application Engine]
+        Django["Django 6.0 REST Framework\n(Accounts • Companies • Jobs • Applications • Skills)"]
+        LoggingRouter["Observability & LoggingRouter\n(Correlation IDs • Structured JSON Logs)"]
+    end
+
+    subgraph Tier3 [Tier 3: Persistence & Storage]
+        PrimaryDB[("PostgreSQL: Primary DB\n(Users • Jobs • Companies • Applications)")]
+        LogsDB[("PostgreSQL: logs_db\n(Dedicated Request Logs & Traces)")]
+        Media["Media Storage\n(Candidate Resumes • Company Logos)"]
+    end
+
+    Frontend -->|REST APIs / JWT| Django
+    CMS -->|Direct Postgres Adapter| PrimaryDB
+    Django -->|ORM & ACID Transactions| PrimaryDB
+    Django -->|Static & Resumes| Media
+    LoggingRouter -->|Isolated Async Ingestion| LogsDB
+```
 
 ---
 

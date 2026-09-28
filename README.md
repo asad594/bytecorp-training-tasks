@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="docs/assets/banner-header.svg" alt="ByteCorp Job Board Platform Header" width="100%" />
+  <img src="docs/assets/jobboard-banner.png" alt="ByteCorp Job Board Platform" width="100%" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
 
   <br/><br/>
 
@@ -36,8 +36,6 @@
     <b>A modern, decoupled, multi-tier recruitment and career management ecosystem engineered during the ByteCorp Traineeship Program.</b><br/>
     Featuring role-based authentication, structured observability with isolated database routing, dynamic job search and filtering, headless CMS editorial controls, and interactive application pipelines.
   </p>
-
-  <img src="docs/assets/hero-banner.jpg" alt="ByteCorp Job Board Platform Preview" width="100%" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
 
 </div>
 
@@ -158,9 +156,30 @@ The CMS panel will be live at `http://localhost:3000/admin`.
 
 The platform follows a decoupled, 3-tier enterprise architecture:
 
-<div align="center">
-  <img src="docs/assets/architecture.svg" alt="System Architecture Diagram" width="100%" />
-</div>
+```mermaid
+graph TD
+    subgraph Tier1 [Tier 1: Presentation & Interfaces]
+        Frontend["Job Board Web Portal\n(React 19 • Vite 8 • Tailwind CSS v4)"]
+        CMS["Headless CMS Admin\n(Payload CMS 3 • Next.js 16 • TypeScript)"]
+    end
+
+    subgraph Tier2 [Tier 2: API & Application Engine]
+        Django["Django 6.0 REST Framework\n(Accounts • Companies • Jobs • Applications • Skills)"]
+        LoggingRouter["Observability & LoggingRouter\n(Correlation IDs • Structured JSON Logs)"]
+    end
+
+    subgraph Tier3 [Tier 3: Persistence & Storage]
+        PrimaryDB[("PostgreSQL: Primary DB\n(Users • Jobs • Companies • Applications)")]
+        LogsDB[("PostgreSQL: logs_db\n(Dedicated Request Logs & Traces)")]
+        Media["Media Storage\n(Candidate Resumes • Company Logos)"]
+    end
+
+    Frontend -->|REST APIs / JWT| Django
+    CMS -->|Direct Postgres Adapter| PrimaryDB
+    Django -->|ORM & ACID Transactions| PrimaryDB
+    Django -->|Static & Resumes| Media
+    LoggingRouter -->|Isolated Async Ingestion| LogsDB
+```
 
 <details>
 <summary><b>🔍 View Architecture Deep Dive</b></summary>
@@ -182,9 +201,16 @@ For complete architectural specifications, see **[System Architecture Guide](doc
 
 ### Candidate Discovery & Application Pipeline
 
-<div align="center">
-  <img src="docs/assets/process_flow.svg" alt="Job Application Lifecycle" width="100%" />
-</div>
+```mermaid
+graph LR
+    A[Browse & Filter Jobs] --> B[Submit Application + CV]
+    B --> C[Status: pending]
+    C --> D[Recruiter Screening]
+    D --> E[Status: reviewed]
+    E --> F{Evaluation}
+    F -->|Interview Invite| G[Status: shortlisted]
+    F -->|Not Selected| H[Status: rejected]
+```
 
 <details>
 <summary><b>📋 View Application State Machine Details</b></summary>
@@ -203,12 +229,6 @@ For complete architectural specifications, see **[System Architecture Guide](doc
 See **[Workflows & Lifecycles Guide](docs/WORKFLOWS.md)** for exhaustive details.
 
 </details>
-
-### Multi-Actor Role Swimlane
-
-<div align="center">
-  <img src="docs/assets/swimlane.svg" alt="Operational Swimlane Diagram" width="100%" />
-</div>
 
 ---
 
